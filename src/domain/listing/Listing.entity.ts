@@ -1,0 +1,42 @@
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from '../user/User.entity';
+
+@Entity({ name: 'listings' })
+export class Listing {
+  @PrimaryColumn()
+  id: string;
+
+  @Column({ nullable: false })
+  title: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column('json', { nullable: true })
+  images: { url: string; id: string }[];
+
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  phone_number: string;
+
+  @Column({ nullable: true })
+  email: string;
+
+  @ManyToOne(() => User, (user) => user.listings, { onDelete: 'CASCADE' })
+  user: User;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  created_at: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updated_at: Date;
+}
