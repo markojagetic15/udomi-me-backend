@@ -13,6 +13,7 @@ import {
 import { ListingService } from '@/services/listing/listing.service';
 import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
 import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
+import { Pagination, PaginationParams } from '@/shared/pagination.helper';
 
 @Controller('/api')
 export class ListingController {
@@ -33,8 +34,21 @@ export class ListingController {
     return this.listingService.deleteListing(id);
   }
 
+  @Get('/user/listings')
+  getMyListing(
+    @Headers() headers: { authorization: string },
+    @PaginationParams() paginationParams: Pagination,
+  ) {
+    return this.listingService.getMyListings(headers, paginationParams);
+  }
+
   @Get('/listings')
-  getMyListing(@Headers() headers: { authorization: string }) {
-    return this.listingService.getMyListings(headers);
+  getAllListings(@PaginationParams() paginationParams: Pagination) {
+    return this.listingService.getAllListings(paginationParams);
+  }
+
+  @Get('/listings/:id')
+  getListing(@Param('id') id: string) {
+    return this.listingService.getListingById(id);
   }
 }

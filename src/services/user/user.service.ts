@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
 import {
@@ -6,7 +6,6 @@ import {
   Injectable,
   NotFoundException,
   Param,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { User } from '@/domain/user/User.entity';
@@ -109,6 +108,7 @@ export class UserService {
 
     const user = await userRepository.findOne({
       where: { id: (decode as JwtPayload).id },
+      relations: ['listings'],
     });
 
     if (!user) return;
