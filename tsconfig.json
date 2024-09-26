@@ -16,6 +16,15 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true,
+    "paths": {
+      "@/application/*": ["src/application/*"],
+      "@/config/*": ["src/config/*"],
+      "@/domain/*": ["src/domain/*"],
+      "@/services/*": ["src/services/*"],
+      "@/shared/*": ["src/shared/*"],
+      "@/infrastructure/*": ["src/infrastructure/*"],
+    }
   }
 }

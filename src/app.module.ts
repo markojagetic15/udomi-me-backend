@@ -1,10 +1,27 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ResourceController } from '@/application/controllers/resource/resource.controller';
+import { JwtModule } from '@nestjs/jwt';
+import { UserController } from '@/application/controllers/user/user.controller';
+import { AuthController } from '@/application/controllers/auth/auth.controller';
+import { ListingController } from '@/application/controllers/listing/listing.controller';
+import { UserService } from '@/services/user/user.service';
+import { AuthService } from '@/services/auth/auth.service';
+import { ListingService } from '@/services/listing/listing.service';
+import { ResourceService } from '@/services/resource/resource.service';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || '',
+      signOptions: { expiresIn: '1h' },
+    }),
+  ],
+  controllers: [
+    UserController,
+    AuthController,
+    ListingController,
+    ResourceController,
+  ],
+  providers: [UserService, AuthService, ListingService, ResourceService],
 })
 export class AppModule {}
