@@ -9,6 +9,7 @@ import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
 import { User } from '@/domain/user/User.entity';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
+import { Pagination, PaginationParams } from '@/shared/pagination.helper';
 
 @Injectable()
 export class ListingService {
@@ -44,22 +45,27 @@ export class ListingService {
     const userRepository = AppDataSource.getRepository(User);
 
     if (!user.listings) {
-      await userRepository.save({
-        ...user,
-        listings: [listing],
-        updated_at: new Date(),
-      });
+      user.listings = [listing];
     } else {
-      await userRepository.save({
-        ...user,
-        listings: [...user.listings, listing],
-        updated_at: new Date(),
-      });
+      user.listings.push(listing);
     }
 
+    await userRepository.save(user);
     await listingRepository.save(listing);
 
-    return { listing };
+    return {
+      listing: {
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        images: listing.images,
+        address: listing.address,
+        phone_number: listing.phone_number,
+        email: listing.email,
+        created_at: listing.created_at,
+        updated_at: listing.updated_at,
+      },
+    };
   }
 
   async updateListing(@Param('id') id: string, @Body() body: UpdateListingDto) {
@@ -97,7 +103,14 @@ export class ListingService {
     return { message: 'Listing deleted' };
   }
 
-  async getMyListings(@Headers() headers: { authorization: string }) {
+  async getMyListings(
+    @Headers() headers: { authorization: string },
+    @PaginationParams() paginationParams: Pagination,
+  ) {
+    const take = paginationParams.limit || 10;
+    const page = paginationParams.page || 1;
+    const skip = (page - 1) * take;
+
     const token = headers.authorization.split(' ')[1];
 
     if (!token) return;
@@ -114,10 +127,56 @@ export class ListingService {
 
     const listingRepository = AppDataSource.getRepository(Listing);
 
-    const listings = await listingRepository.find({
+    const [listings, total] = await listingRepository.findAndCount({
       where: { user: user },
+      take: paginationParams.limit,
+      skip,
     });
 
-    return { listings };
+    return {
+      listings,
+      meta: {
+        total,
+        page,
+        take,
+        totalPages: Math.ceil(total / take),
+      },
+    };
+  }
+
+  async getAllListings(@PaginationParams() paginationParams: Pagination) {
+    const take = paginationParams.limit || 10;
+    const page = paginationParams.page || 1;
+    const skip = (page - 1) * take;
+
+    const listingRepository = AppDataSource.getRepository(Listing);
+    const [listings, total] = await listingRepository.findAndCount({
+      take: paginationParams.limit,
+      skip,
+    });
+
+    return {
+      listings,
+      meta: {
+        total,
+        page,
+        take,
+        totalPages: Math.ceil(total / take),
+      },
+    };
+  }
+
+  async getListingById(id: string) {
+    if (!id) {
+      return { message: 'Listing id is required' };
+    }
+    const listingRepository = AppDataSource.getRepository(Listing);
+    const listing = await listingRepository.findOne({ where: { id } });
+
+    if (!listing) {
+      return { message: 'Listing not found' };
+    }
+
+    return { listing };
   }
 }
