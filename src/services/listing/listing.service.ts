@@ -11,10 +11,16 @@ import { JwtPayload } from 'jsonwebtoken';
 import { Pagination, PaginationParams } from '@/shared/pagination.helper';
 import { ListingResponseDto } from '@/application/dto/listing/listing-response.dto';
 import { plainToClass } from 'class-transformer';
+import { ListingRepository } from '@/infrastructure/listing.repository';
+import { UserRepository } from '@/infrastructure/user.repository';
 
 @Injectable()
 export class ListingService {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly listingRepository: ListingRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
 
   async createListing(
     @Body() body: CreateListingDto,
@@ -32,7 +38,6 @@ export class ListingService {
       throw new Error('Phone number or email is required');
     }
 
-    const listingRepository = AppDataSource.getRepository(Listing);
     const listing = new Listing();
 
     listing.title = title;
@@ -46,16 +51,14 @@ export class ListingService {
     listing.created_at = new Date();
     listing.updated_at = new Date();
 
-    const userRepository = AppDataSource.getRepository(User);
-
     if (!user.listings) {
       user.listings = [listing];
     } else {
       user.listings.push(listing);
     }
 
-    await userRepository.save(user);
-    await listingRepository.save(listing);
+    await this.userRepository.save(user);
+    await this.listingRepository.save(listing);
 
     const responseDto = plainToClass(ListingResponseDto, listing);
 
@@ -65,23 +68,15 @@ export class ListingService {
   }
 
   async updateListing(@Param('id') id: string, @Body() body: UpdateListingDto) {
-    if (!id) {
-      return { message: 'Listing id is required' };
-    }
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const listing = await listingRepository.findOne({ where: { id } });
+    const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
       return { message: 'Listing not found' };
     }
 
-    const updatedListing = await listingRepository.update(
-      { id },
-      {
-        ...body,
-        updated_at: new Date(),
-      },
-    );
+    const updatedListing = await this.listingRepository.update(listing.id, {
+      ...body,
+    });
 
     const responseDto = plainToClass(ListingResponseDto, updatedListing);
 
@@ -89,17 +84,14 @@ export class ListingService {
   }
 
   async deleteListing(@Param('id') id: string) {
-    if (!id) {
-      return { message: 'Listing id is required' };
-    }
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const listing = await listingRepository.findOne({ where: { id } });
+    const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
       return { message: 'Listing not found' };
     }
 
-    await listingRepository.delete(listing);
+    await this.listingRepository.remove(listing);
+
     return { message: 'Listing deleted' };
   }
 
@@ -167,11 +159,7 @@ export class ListingService {
   }
 
   async getListingById(id: string) {
-    if (!id) {
-      return { message: 'Listing id is required' };
-    }
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const listing = await listingRepository.findOne({ where: { id } });
+    const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
       return { message: 'Listing not found' };

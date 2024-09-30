@@ -55,13 +55,6 @@ export class UserService {
     @Body() body: UpdateUserDto,
     @Headers() headers: { authorization: string },
   ) {
-    if (!id) {
-      throw new HttpException(
-        'Missing required field: id',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     const { user: me } = await this.getMe(headers);
 
     if (me.id !== id) {
@@ -85,13 +78,6 @@ export class UserService {
     @Param('id') id: string,
     @Headers() headers: { authorization: string },
   ) {
-    if (!id) {
-      throw new HttpException(
-        'Missing required field: id',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     const { user: me } = await this.getMe(headers);
 
     if (me.id !== id) {
