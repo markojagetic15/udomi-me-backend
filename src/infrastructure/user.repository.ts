@@ -1,6 +1,8 @@
 import { User } from '@/domain/user/User.entity';
 import { AppDataSource } from '@/config/data-source';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class UserRepository {
   private readonly userRepository = AppDataSource.getRepository(User);
 

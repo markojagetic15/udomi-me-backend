@@ -75,13 +75,17 @@ export class ListingService {
       return { message: 'Listing not found' };
     }
 
-    const updatedListing = await listingRepository.save({
-      ...listing,
-      ...body,
-      updated_at: new Date(),
-    });
+    const updatedListing = await listingRepository.update(
+      { id },
+      {
+        ...body,
+        updated_at: new Date(),
+      },
+    );
 
-    return { listing: updatedListing };
+    const responseDto = plainToClass(ListingResponseDto, updatedListing);
+
+    return { listing: responseDto };
   }
 
   async deleteListing(@Param('id') id: string) {
