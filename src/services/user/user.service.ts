@@ -1,14 +1,13 @@
-import { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
 import {
   Body,
+  Headers,
   HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
   Param,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { UpdateUserDto } from '@/application/dto/user/update-user.dto';
@@ -20,8 +19,8 @@ export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
   @UseGuards(JwtAuthGuard)
-  async getMe(req: Request) {
-    const header = req.headers.authorization;
+  async getMe(@Headers() headers: { authorization: string }) {
+    const header = headers.authorization;
 
     if (!header) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -54,7 +53,7 @@ export class UserService {
   async updateUser(
     @Param('id') id: string,
     @Body() body: UpdateUserDto,
-    @Req() req: Request,
+    @Headers() headers: { authorization: string },
   ) {
     if (!id) {
       throw new HttpException(
@@ -63,7 +62,7 @@ export class UserService {
       );
     }
 
-    const { user: me } = await this.getMe(req);
+    const { user: me } = await this.getMe(headers);
 
     if (me.id !== id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -82,7 +81,10 @@ export class UserService {
   }
 
   @UseGuards(JwtAuthGuard)
-  async deleteUser(@Param('id') id: string, @Req() req: Request) {
+  async deleteUser(
+    @Param('id') id: string,
+    @Headers() headers: { authorization: string },
+  ) {
     if (!id) {
       throw new HttpException(
         'Missing required field: id',
@@ -90,7 +92,7 @@ export class UserService {
       );
     }
 
-    const { user: me } = await this.getMe(req);
+    const { user: me } = await this.getMe(headers);
 
     if (me.id !== id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);

@@ -1,4 +1,3 @@
-import { Request } from 'express';
 import {
   Body,
   Controller,
@@ -7,7 +6,6 @@ import {
   Param,
   Post,
   Put,
-  Req,
   Headers,
 } from '@nestjs/common';
 import { ListingService } from '@/services/listing/listing.service';
@@ -20,8 +18,11 @@ export class ListingController {
   constructor(private readonly listingService: ListingService) {}
 
   @Post('/listings')
-  createListing(@Body() body: CreateListingDto, @Req() req: Request) {
-    return this.listingService.createListing(body, req);
+  createListing(
+    @Body() body: CreateListingDto,
+    @Headers() headers: { authorization: string },
+  ) {
+    return this.listingService.createListing(body, headers);
   }
 
   @Put('/listings/:id')

@@ -1,28 +1,38 @@
-import { Request } from 'express';
-import { Body, Controller, Delete, Get, Param, Put, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Put,
+} from '@nestjs/common';
 import { UserService } from '@/services/user/user.service';
-import { UpdateUserDto } from '../../dto/user/update-user.dto';
+import { UpdateUserDto } from '@/application/dto/user/update-user.dto';
 
 @Controller('/api')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('/me')
-  async getMe(@Req() req: Request) {
-    return this.userService.getMe(req);
+  async getMe(@Headers() headers: { authorization: string }) {
+    return this.userService.getMe(headers);
   }
 
   @Put('/users/:id')
   async updateUser(
     @Param('id') id: string,
     @Body() body: UpdateUserDto,
-    @Req() req: Request,
+    @Headers() headers: { authorization: string },
   ) {
-    return this.userService.updateUser(id, body, req);
+    return this.userService.updateUser(id, body, headers);
   }
 
   @Delete('/users/:id')
-  async deleteUser(@Param('id') id: string, @Req() req: Request) {
-    return this.userService.deleteUser(id, req);
+  async deleteUser(
+    @Param('id') id: string,
+    @Headers() headers: { authorization: string },
+  ) {
+    return this.userService.deleteUser(id, headers);
   }
 }

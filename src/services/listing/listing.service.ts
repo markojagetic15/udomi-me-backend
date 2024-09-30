@@ -1,5 +1,4 @@
-import { Body, Injectable, Param, Req, Headers } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Injectable, Param, Headers } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { AppDataSource } from '@/config/data-source';
 import { Listing } from '@/domain/listing/Listing.entity';
@@ -17,10 +16,13 @@ import { plainToClass } from 'class-transformer';
 export class ListingService {
   constructor(private readonly userService: UserService) {}
 
-  async createListing(@Body() body: CreateListingDto, @Req() req: Request) {
+  async createListing(
+    @Body() body: CreateListingDto,
+    @Headers() headers: { authorization: string },
+  ) {
     const { title, description, images, address, phone_number, email } = body;
 
-    const { user } = await this.userService.getMe(req);
+    const { user } = await this.userService.getMe(headers);
 
     if (!user) {
       throw new Error('User not found');
