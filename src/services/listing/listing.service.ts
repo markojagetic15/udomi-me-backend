@@ -10,6 +10,8 @@ import { User } from '@/domain/user/User.entity';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
 import { Pagination, PaginationParams } from '@/shared/pagination.helper';
+import { ListingResponseDto } from '@/application/dto/listing/listing-response.dto';
+import { plainToClass } from 'class-transformer';
 
 @Injectable()
 export class ListingService {
@@ -18,14 +20,14 @@ export class ListingService {
   async createListing(@Body() body: CreateListingDto, @Req() req: Request) {
     const { title, description, images, address, phone_number, email } = body;
 
-    const user = await this.userService.getMyUser(req);
+    const { user } = await this.userService.getMe(req);
 
     if (!user) {
-      return { message: 'User not found' };
+      throw new Error('User not found');
     }
 
     if (!phone_number && !email) {
-      return { message: 'Phone number or email is required' };
+      throw new Error('Phone number or email is required');
     }
 
     const listingRepository = AppDataSource.getRepository(Listing);
@@ -53,18 +55,10 @@ export class ListingService {
     await userRepository.save(user);
     await listingRepository.save(listing);
 
+    const responseDto = plainToClass(ListingResponseDto, listing);
+
     return {
-      listing: {
-        id: listing.id,
-        title: listing.title,
-        description: listing.description,
-        images: listing.images,
-        address: listing.address,
-        phone_number: listing.phone_number,
-        email: listing.email,
-        created_at: listing.created_at,
-        updated_at: listing.updated_at,
-      },
+      listing: responseDto,
     };
   }
 

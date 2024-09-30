@@ -13,12 +13,16 @@ export class UserController {
   }
 
   @Put('/users/:id')
-  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
-    return this.userService.updateUser(id, body);
+  async updateUser(
+    @Param('id') id: string,
+    @Body() body: UpdateUserDto,
+    @Req() req: Request,
+  ) {
+    return this.userService.updateUser(id, body, req);
   }
 
   @Delete('/users/:id')
-  async deleteUser(@Param('id') id: string) {
-    return this.userService.deleteUser(id);
+  async deleteUser(@Param('id') id: string, @Req() req: Request) {
+    return this.userService.deleteUser(id, req);
   }
 }
