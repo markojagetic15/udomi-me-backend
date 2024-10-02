@@ -13,6 +13,12 @@ export class UserRepository {
     });
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+    });
+  }
+
   async save(user: User): Promise<User> {
     return this.userRepository.save(user);
   }
