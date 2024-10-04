@@ -1,38 +1,38 @@
 import {
   IsArray,
   IsEmail,
-  IsNotEmpty,
+  IsOptional,
   IsString,
   Length,
 } from 'class-validator';
 
 export class UpdateListingDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @Length(5, 50)
   title: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @Length(5, 500)
   description: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsArray()
   images: {
     url: string;
     id: string;
   }[];
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @Length(5, 500)
   address: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   phone_number: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @IsEmail()
   email: string;
