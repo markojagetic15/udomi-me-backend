@@ -8,11 +8,11 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { ResourceService } from '@/services/resource/resource.service';
 import { upload } from '@/shared/upload';
 
-@Controller('/api')
+@Controller('/resources')
 export class ResourceController {
   constructor(private readonly resourceService: ResourceService) {}
 
-  @Post('/resources')
+  @Post('/')
   @UseInterceptors(FilesInterceptor('images', 5, upload))
   async uploadImage(@UploadedFiles() files: Express.MulterS3.File[]) {
     return this.resourceService.uploadImage(files);

@@ -8,6 +8,8 @@ import { UserService } from '@/services/user/user.service';
 import { AuthService } from '@/services/auth/auth.service';
 import { ListingService } from '@/services/listing/listing.service';
 import { ResourceService } from '@/services/resource/resource.service';
+import { UserRepository } from '@/infrastructure/user.repository';
+import { ListingRepository } from '@/infrastructure/listing.repository';
 
 @Module({
   imports: [
@@ -22,6 +24,13 @@ import { ResourceService } from '@/services/resource/resource.service';
     ListingController,
     ResourceController,
   ],
-  providers: [UserService, AuthService, ListingService, ResourceService],
+  providers: [
+    UserService,
+    AuthService,
+    ListingService,
+    ResourceService,
+    UserRepository,
+    ListingRepository,
+  ],
 })
 export class AppModule {}

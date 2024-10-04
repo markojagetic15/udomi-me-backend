@@ -1,34 +1,47 @@
-import { Body, Injectable, Param, Req, Headers } from '@nestjs/common';
-import { Request } from 'express';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { AppDataSource } from '@/config/data-source';
 import { Listing } from '@/domain/listing/Listing.entity';
 import { UserService } from '../user/user.service';
 import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
 import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
-import { User } from '@/domain/user/User.entity';
-import * as jwt from 'jsonwebtoken';
-import { JwtPayload } from 'jsonwebtoken';
-import { Pagination, PaginationParams } from '@/shared/pagination.helper';
+import { Pagination } from '@/shared/pagination.helper';
+import { ListingResponseDto } from '@/application/dto/listing/listing-response.dto';
+import { plainToClass } from 'class-transformer';
+import { ListingRepository } from '@/infrastructure/listing.repository';
+import { UserRepository } from '@/infrastructure/user.repository';
 
 @Injectable()
 export class ListingService {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly listingRepository: ListingRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
 
-  async createListing(@Body() body: CreateListingDto, @Req() req: Request) {
+  async createListing(
+    body: CreateListingDto,
+    headers: { authorization: string },
+  ) {
     const { title, description, images, address, phone_number, email } = body;
 
-    const user = await this.userService.getMyUser(req);
+    const { user } = await this.userService.getMe(headers);
 
     if (!user) {
-      return { message: 'User not found' };
+      throw new NotFoundException('User not found');
     }
 
     if (!phone_number && !email) {
-      return { message: 'Phone number or email is required' };
+      throw new HttpException(
+        'Phone number or email is required',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    const listingRepository = AppDataSource.getRepository(Listing);
     const listing = new Listing();
 
     listing.title = title;
@@ -42,92 +55,61 @@ export class ListingService {
     listing.created_at = new Date();
     listing.updated_at = new Date();
 
-    const userRepository = AppDataSource.getRepository(User);
-
     if (!user.listings) {
       user.listings = [listing];
     } else {
       user.listings.push(listing);
     }
 
-    await userRepository.save(user);
-    await listingRepository.save(listing);
+    await this.userRepository.save(user);
+    await this.listingRepository.save(listing);
+
+    const responseDto = plainToClass(ListingResponseDto, listing);
 
     return {
-      listing: {
-        id: listing.id,
-        title: listing.title,
-        description: listing.description,
-        images: listing.images,
-        address: listing.address,
-        phone_number: listing.phone_number,
-        email: listing.email,
-        created_at: listing.created_at,
-        updated_at: listing.updated_at,
-      },
+      listing: responseDto,
     };
   }
 
-  async updateListing(@Param('id') id: string, @Body() body: UpdateListingDto) {
-    if (!id) {
-      return { message: 'Listing id is required' };
-    }
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const listing = await listingRepository.findOne({ where: { id } });
+  async updateListing(id: string, body: UpdateListingDto) {
+    const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return { message: 'Listing not found' };
+      return new NotFoundException('Listing not found');
     }
 
-    const updatedListing = await listingRepository.save({
-      ...listing,
+    const updatedListing = await this.listingRepository.update(listing.id, {
       ...body,
-      updated_at: new Date(),
     });
 
-    return { listing: updatedListing };
+    const responseDto = plainToClass(ListingResponseDto, updatedListing);
+
+    return { listing: responseDto };
   }
 
-  async deleteListing(@Param('id') id: string) {
-    if (!id) {
-      return { message: 'Listing id is required' };
-    }
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const listing = await listingRepository.findOne({ where: { id } });
+  async deleteListing(id: string) {
+    const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return { message: 'Listing not found' };
+      return new NotFoundException('Listing not found');
     }
 
-    await listingRepository.delete(listing);
-    return { message: 'Listing deleted' };
+    await this.listingRepository.remove(listing);
+
+    return new HttpException('Listing deleted', HttpStatus.OK);
   }
 
   async getMyListings(
-    @Headers() headers: { authorization: string },
-    @PaginationParams() paginationParams: Pagination,
+    headers: { authorization: string },
+    paginationParams: Pagination,
   ) {
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
 
-    const token = headers.authorization.split(' ')[1];
+    const { user } = await this.userService.getMe(headers);
 
-    if (!token) return;
-
-    const decode = jwt.decode(token);
-
-    if (!decode) return;
-
-    const userRepository = AppDataSource.getRepository(User);
-
-    const user = await userRepository.findOne({
-      where: { id: (decode as JwtPayload).id },
-    });
-
-    const listingRepository = AppDataSource.getRepository(Listing);
-
-    const [listings, total] = await listingRepository.findAndCount({
+    const [listings, total] = await this.listingRepository.findAndCount({
       where: { user: user },
       take: paginationParams.limit,
       skip,
@@ -144,13 +126,12 @@ export class ListingService {
     };
   }
 
-  async getAllListings(@PaginationParams() paginationParams: Pagination) {
+  async getAllListings(paginationParams: Pagination) {
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
 
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const [listings, total] = await listingRepository.findAndCount({
+    const [listings, total] = await this.listingRepository.findAndCount({
       take: paginationParams.limit,
       skip,
     });
@@ -167,14 +148,10 @@ export class ListingService {
   }
 
   async getListingById(id: string) {
-    if (!id) {
-      return { message: 'Listing id is required' };
-    }
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const listing = await listingRepository.findOne({ where: { id } });
+    const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return { message: 'Listing not found' };
+      return new NotFoundException('Listing not found');
     }
 
     return { listing };
