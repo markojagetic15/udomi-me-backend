@@ -91,6 +91,6 @@ export class UserService {
     }
 
     await this.userRepository.remove(user);
-    return { message: 'user deleted successfully' };
+    return new HttpException('User deleted', HttpStatus.OK);
   }
 }

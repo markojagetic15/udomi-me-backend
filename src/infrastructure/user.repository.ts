@@ -1,29 +1,61 @@
 import { User } from '@/domain/user/User.entity';
 import { AppDataSource } from '@/config/data-source';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class UserRepository {
   private readonly userRepository = AppDataSource.getRepository(User);
 
   async findById(id: string, relations?: string[]): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { id },
-      relations: relations,
-    });
+    try {
+      return this.userRepository.findOne({
+        where: { id },
+        relations: relations,
+      });
+    } catch (e) {
+      console.error(e);
+      throw new HttpException(
+        'Error finding user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { email },
-    });
+    try {
+      return this.userRepository.findOne({
+        where: { email },
+      });
+    } catch (e) {
+      console.error(e);
+      throw new HttpException(
+        'Error finding user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async save(user: User): Promise<User> {
-    return this.userRepository.save(user);
+    try {
+      return this.userRepository.save(user);
+    } catch (e) {
+      console.error(e);
+      throw new HttpException(
+        'Error saving user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async remove(user: User): Promise<void> {
-    await this.userRepository.remove(user);
+    try {
+      await this.userRepository.remove(user);
+    } catch (e) {
+      console.error(e);
+      throw new HttpException(
+        'Error removing user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

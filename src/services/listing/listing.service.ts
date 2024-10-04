@@ -1,13 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { AppDataSource } from '@/config/data-source';
 import { Listing } from '@/domain/listing/Listing.entity';
 import { UserService } from '../user/user.service';
 import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
 import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
-import { User } from '@/domain/user/User.entity';
-import * as jwt from 'jsonwebtoken';
-import { JwtPayload } from 'jsonwebtoken';
 import { Pagination } from '@/shared/pagination.helper';
 import { ListingResponseDto } from '@/application/dto/listing/listing-response.dto';
 import { plainToClass } from 'class-transformer';
@@ -31,11 +32,14 @@ export class ListingService {
     const { user } = await this.userService.getMe(headers);
 
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
 
     if (!phone_number && !email) {
-      throw new Error('Phone number or email is required');
+      throw new HttpException(
+        'Phone number or email is required',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const listing = new Listing();
@@ -71,7 +75,7 @@ export class ListingService {
     const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return { message: 'Listing not found' };
+      return new NotFoundException('Listing not found');
     }
 
     const updatedListing = await this.listingRepository.update(listing.id, {
@@ -87,12 +91,12 @@ export class ListingService {
     const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return { message: 'Listing not found' };
+      return new NotFoundException('Listing not found');
     }
 
     await this.listingRepository.remove(listing);
 
-    return { message: 'Listing deleted' };
+    return new HttpException('Listing deleted', HttpStatus.OK);
   }
 
   async getMyListings(
@@ -103,23 +107,9 @@ export class ListingService {
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
 
-    const token = headers.authorization.split(' ')[1];
+    const { user } = await this.userService.getMe(headers);
 
-    if (!token) return;
-
-    const decode = jwt.decode(token);
-
-    if (!decode) return;
-
-    const userRepository = AppDataSource.getRepository(User);
-
-    const user = await userRepository.findOne({
-      where: { id: (decode as JwtPayload).id },
-    });
-
-    const listingRepository = AppDataSource.getRepository(Listing);
-
-    const [listings, total] = await listingRepository.findAndCount({
+    const [listings, total] = await this.listingRepository.findAndCount({
       where: { user: user },
       take: paginationParams.limit,
       skip,
@@ -141,8 +131,7 @@ export class ListingService {
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
 
-    const listingRepository = AppDataSource.getRepository(Listing);
-    const [listings, total] = await listingRepository.findAndCount({
+    const [listings, total] = await this.listingRepository.findAndCount({
       take: paginationParams.limit,
       skip,
     });
@@ -162,7 +151,7 @@ export class ListingService {
     const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return { message: 'Listing not found' };
+      return new NotFoundException('Listing not found');
     }
 
     return { listing };
