@@ -155,7 +155,7 @@ export class ListingService {
   }
 
   async getListingById(id: string) {
-    const listing = await this.listingRepository.findById(id);
+    const listing = await this.listingRepository.findById(id, ['user']);
 
     if (!listing) {
       return new NotFoundException('Listing not found');
