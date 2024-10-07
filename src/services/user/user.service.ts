@@ -13,10 +13,15 @@ import {
 import { UpdateUserDto } from '@/application/dto/user/update-user.dto';
 import { JwtAuthGuard } from '@/shared/auth.guard';
 import { UserRepository } from '@/infrastructure/user.repository';
+import { Pagination } from '@/shared/pagination.helper';
+import { ListingRepository } from '@/infrastructure/listing.repository';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly listingRepository: ListingRepository,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   async getMe(@Headers() headers: { authorization: string }) {
@@ -92,5 +97,29 @@ export class UserService {
 
     await this.userRepository.remove(user);
     return new HttpException('User deleted', HttpStatus.OK);
+  }
+
+  async getUserListings(id: string, paginationParams: Pagination) {
+    const take = paginationParams.limit || 10;
+    const page = paginationParams.page || 1;
+    const skip = (page - 1) * take;
+
+    const user = await this.userRepository.findById(id);
+
+    const [listings, total] = await this.listingRepository.findAndCount({
+      where: { user: user },
+      take: paginationParams.limit,
+      skip,
+    });
+
+    return {
+      listings,
+      meta: {
+        total,
+        page,
+        take,
+        totalPages: Math.ceil(total / take),
+      },
+    };
   }
 }

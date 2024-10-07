@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from '@/services/user/user.service';
 import { UpdateUserDto } from '@/application/dto/user/update-user.dto';
+import { Pagination, PaginationParams } from '@/shared/pagination.helper';
 
 @Controller()
 export class UserController {
@@ -34,5 +35,13 @@ export class UserController {
     @Headers() headers: { authorization: string },
   ) {
     return this.userService.deleteUser(id, headers);
+  }
+
+  @Get('/users/:id/listings')
+  async getUserListings(
+    @Param('id') id: string,
+    @PaginationParams() paginationParams: Pagination,
+  ) {
+    return this.userService.getUserListings(id, paginationParams);
   }
 }
