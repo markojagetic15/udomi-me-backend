@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../user/User.entity';
+import { Category } from '@/domain/listing/Category.enum';
 
 @Entity({ name: 'listings' })
 export class Listing {
@@ -30,6 +31,9 @@ export class Listing {
 
   @Column({ nullable: true })
   email: string;
+
+  @Column({ nullable: true })
+  category: Category;
 
   @ManyToOne(() => User, (user) => user.listings, { onDelete: 'CASCADE' })
   user: User;

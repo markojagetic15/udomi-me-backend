@@ -12,6 +12,7 @@ import { ListingService } from '@/services/listing/listing.service';
 import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
 import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
 import { Pagination, PaginationParams } from '@/shared/pagination.helper';
+import { GetListingDto } from '@/application/dto/listing/get-listing.dto';
 
 @Controller('/listings')
 export class ListingController {
@@ -44,8 +45,11 @@ export class ListingController {
   }
 
   @Get('/')
-  getAllListings(@PaginationParams() paginationParams: Pagination) {
-    return this.listingService.getAllListings(paginationParams);
+  getAllListings(
+    @PaginationParams() paginationParams: Pagination,
+    @Body() body: GetListingDto,
+  ) {
+    return this.listingService.getAllListings(paginationParams, body);
   }
 
   @Get('/:id')

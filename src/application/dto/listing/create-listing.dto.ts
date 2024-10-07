@@ -1,10 +1,12 @@
 import {
   IsArray,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsString,
   Length,
 } from 'class-validator';
+import { Category } from '@/domain/listing/Category.enum';
 
 export class CreateListingDto {
   @IsNotEmpty()
@@ -36,4 +38,9 @@ export class CreateListingDto {
   @IsString()
   @IsEmail()
   email: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @IsEnum(Category)
+  category: Category;
 }

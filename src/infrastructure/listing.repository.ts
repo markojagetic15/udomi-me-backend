@@ -37,10 +37,7 @@ export class ListingRepository {
 
   async update(id: string, listing: UpdateListingDto): Promise<UpdateResult> {
     try {
-      return this.listingRepository.update(
-        { id },
-        { ...listing, updated_at: new Date() },
-      );
+      return this.listingRepository.update({ id }, { ...listing });
     } catch (e) {
       console.error(e);
       throw new HttpException(
@@ -66,6 +63,7 @@ export class ListingRepository {
     where?: Record<string, any>;
     take?: number;
     skip?: number;
+    order?: Record<string, 'ASC' | 'DESC'>;
   }): Promise<[Listing[], number]> {
     try {
       return this.listingRepository.findAndCount(options);
