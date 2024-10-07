@@ -70,8 +70,6 @@ export class AuthService {
     user.last_name = last_name;
     user.email = email;
     user.password = encryptedPassword;
-    user.created_at = new Date();
-    user.updated_at = new Date();
 
     const response = await this.userRepository.save(user);
 

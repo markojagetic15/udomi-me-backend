@@ -14,6 +14,8 @@ import { ListingResponseDto } from '@/application/dto/listing/listing-response.d
 import { plainToClass } from 'class-transformer';
 import { ListingRepository } from '@/infrastructure/listing.repository';
 import { UserRepository } from '@/infrastructure/user.repository';
+import { Category } from '@/domain/listing/Category.enum';
+import { GetListingDto } from '@/application/dto/listing/get-listing.dto';
 
 @Injectable()
 export class ListingService {
@@ -52,8 +54,7 @@ export class ListingService {
     listing.email = email;
     listing.user = user;
     listing.id = uuidv4();
-    listing.created_at = new Date();
-    listing.updated_at = new Date();
+    listing.category = body.category || Category.OTHER;
 
     if (!user.listings) {
       user.listings = [listing];
@@ -126,14 +127,20 @@ export class ListingService {
     };
   }
 
-  async getAllListings(paginationParams: Pagination) {
+  async getAllListings(paginationParams: Pagination, body: GetListingDto) {
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
 
+    const { category, order } = body;
+
     const [listings, total] = await this.listingRepository.findAndCount({
       take: paginationParams.limit,
       skip,
+      where: category
+        ? category.map((cat) => ({ category: cat }))
+        : { category: [] },
+      order: order ? { created_at: order } : { created_at: 'DESC' },
     });
 
     return {
