@@ -4,5 +4,6 @@ export enum Category {
   RABBIT = 'rabbit',
   BIRD = 'bird',
   REPTILE = 'reptile',
+  HORSE = 'horse',
   OTHER = 'other',
 }

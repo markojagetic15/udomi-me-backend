@@ -10,6 +10,7 @@ import { ListingService } from '@/services/listing/listing.service';
 import { ResourceService } from '@/services/resource/resource.service';
 import { UserRepository } from '@/infrastructure/user.repository';
 import { ListingRepository } from '@/infrastructure/listing.repository';
+import { AuthRepository } from '@/infrastructure/auth.repository';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ListingRepository } from '@/infrastructure/listing.repository';
     ResourceService,
     UserRepository,
     ListingRepository,
+    AuthRepository,
   ],
 })
 export class AppModule {}
