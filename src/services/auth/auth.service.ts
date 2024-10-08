@@ -13,6 +13,7 @@ import { UserRepository } from '@/infrastructure/user.repository';
 import { ForgotPasswordDto } from '@/application/dto/auth/forgot-password.dto';
 import { AuthRepository } from '@/infrastructure/auth.repository';
 import { ResetPasswordDto } from '@/application/dto/auth/reset-password.dto';
+import { EmailParams, MailerSend, Recipient, Sender } from 'mailersend';
 
 @Injectable()
 export class AuthService {
@@ -112,6 +113,34 @@ export class AuthService {
     await this.authRepository.save(token);
 
     // TODO: Send email with reset password link
+
+    const mailerSend = new MailerSend({
+      apiKey: process.env.MAILERSEND_API_KEY,
+    });
+
+    const sentFrom = new Sender(
+      user.email,
+      `${user.first_name} ${user.last_name}`,
+    );
+
+    const recipients = [
+      new Recipient(user.email, `${user.first_name} ${user.last_name}`),
+    ];
+
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setReplyTo(sentFrom)
+      .setSubject('Reset your password');
+
+    mailerSend.email
+      .send(emailParams)
+      .then((response) => {
+        console.log('Email sent successfully:', response);
+      })
+      .catch((error) => {
+        console.error('Error sending email:', error);
+      });
 
     return new HttpException('Email sent', HttpStatus.OK);
   }
