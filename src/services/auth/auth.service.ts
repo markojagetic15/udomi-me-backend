@@ -10,10 +10,16 @@ import { encrypt } from '@/shared/encrypt';
 import { RegisterDto } from '@/application/dto/auth/register.dto';
 import { LoginDto } from '@/application/dto/auth/login.dto';
 import { UserRepository } from '@/infrastructure/user.repository';
+import { ForgotPasswordDto } from '@/application/dto/auth/forgot-password.dto';
+import { AuthRepository } from '@/infrastructure/auth.repository';
+import { ResetPasswordDto } from '@/application/dto/auth/reset-password.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly authRepository: AuthRepository,
+  ) {}
 
   async login(body: LoginDto) {
     const { email, password } = body;
@@ -90,5 +96,57 @@ export class AuthService {
     }
 
     return { user, token };
+  }
+
+  async forgotPassword(body: ForgotPasswordDto) {
+    const { email } = body;
+
+    const user = await this.userRepository.findByEmail(email);
+
+    const token = {
+      token: uuidv4(),
+      userId: user.id,
+      expiration: new Date(Date.now() + 3600000),
+    };
+
+    await this.authRepository.save(token);
+
+    // TODO: Send email with reset password link
+
+    return new HttpException('Email sent', HttpStatus.OK);
+  }
+
+  async resetPassword(body: ResetPasswordDto) {
+    const { token, password } = body;
+    const tokenData = await this.authRepository.findByToken(token);
+
+    if (!tokenData) {
+      throw new HttpException('Token not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (tokenData.expiration < new Date()) {
+      throw new HttpException('Token expired', HttpStatus.BAD_REQUEST);
+    }
+
+    const user = await this.userRepository.findById(tokenData.userId);
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const encryptedPassword = await encrypt.encryptpass(password);
+
+    if (!encryptedPassword) {
+      throw new HttpException(
+        'Error encrypting password',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    user.password = encryptedPassword;
+
+    await this.userRepository.save(user);
+
+    return new HttpException('Password reset successfully', HttpStatus.OK);
   }
 }

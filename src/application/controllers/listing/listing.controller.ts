@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Headers,
+  Query,
 } from '@nestjs/common';
 import { ListingService } from '@/services/listing/listing.service';
 import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
@@ -40,16 +41,18 @@ export class ListingController {
   getMyListing(
     @Headers() headers: { authorization: string },
     @PaginationParams() paginationParams: Pagination,
+    @Query() query: { search: string },
   ) {
-    return this.listingService.getMyListings(headers, paginationParams);
+    return this.listingService.getMyListings(headers, paginationParams, query);
   }
 
   @Get('/')
   getAllListings(
     @PaginationParams() paginationParams: Pagination,
     @Body() body: GetListingDto,
+    @Query() query: { search: string },
   ) {
-    return this.listingService.getAllListings(paginationParams, body);
+    return this.listingService.getAllListings(paginationParams, body, query);
   }
 
   @Get('/:id')

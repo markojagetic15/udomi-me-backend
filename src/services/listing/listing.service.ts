@@ -16,6 +16,7 @@ import { ListingRepository } from '@/infrastructure/listing.repository';
 import { UserRepository } from '@/infrastructure/user.repository';
 import { Category } from '@/domain/listing/Category.enum';
 import { GetListingDto } from '@/application/dto/listing/get-listing.dto';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class ListingService {
@@ -103,15 +104,19 @@ export class ListingService {
   async getMyListings(
     headers: { authorization: string },
     paginationParams: Pagination,
+    query: { search: string },
   ) {
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
+    const searchCondition = query.search
+      ? { title: Like(`%${query.search}%`) }
+      : {};
 
     const { user } = await this.userService.getMe(headers);
 
     const [listings, total] = await this.listingRepository.findAndCount({
-      where: { user: user },
+      where: { user: user, ...searchCondition },
       take: paginationParams.limit,
       skip,
     });
@@ -127,10 +132,17 @@ export class ListingService {
     };
   }
 
-  async getAllListings(paginationParams: Pagination, body: GetListingDto) {
+  async getAllListings(
+    paginationParams: Pagination,
+    body: GetListingDto,
+    query: { search: string },
+  ) {
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
+    const searchCondition = query.search
+      ? { title: Like(`%${query.search}%`) }
+      : {};
 
     const { category, order } = body;
 
@@ -138,8 +150,8 @@ export class ListingService {
       take: paginationParams.limit,
       skip,
       where: category
-        ? category.map((cat) => ({ category: cat }))
-        : { category: [] },
+        ? category.map((cat) => ({ category: cat, ...searchCondition }))
+        : { category: [], ...searchCondition },
       order: order ? { created_at: order } : { created_at: 'DESC' },
     });
 
@@ -155,7 +167,7 @@ export class ListingService {
   }
 
   async getListingById(id: string) {
-    const listing = await this.listingRepository.findById(id);
+    const listing = await this.listingRepository.findById(id, ['user']);
 
     if (!listing) {
       return new NotFoundException('Listing not found');
