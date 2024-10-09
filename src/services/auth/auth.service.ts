@@ -112,35 +112,40 @@ export class AuthService {
 
     await this.authRepository.save(token);
 
-    // TODO: Send email with reset password link
-
     const mailerSend = new MailerSend({
       apiKey: process.env.MAILERSEND_API_KEY,
     });
 
     const sentFrom = new Sender(
-      user.email,
-      `${user.first_name} ${user.last_name}`,
+      process.env.SUPPORT_EMAIL,
+      process.env.BUSINESS_NAME,
     );
 
     const recipients = [
       new Recipient(user.email, `${user.first_name} ${user.last_name}`),
     ];
 
+    const personalization = [
+      {
+        email: user.email,
+        data: {
+          name: `${user.first_name} ${user.last_name}`,
+          account_name: process.env.BUSINESS_NAME,
+          support_email: process.env.SUPPORT_EMAIL,
+          token: token.token,
+        },
+      },
+    ];
+
     const emailParams = new EmailParams()
       .setFrom(sentFrom)
       .setTo(recipients)
       .setReplyTo(sentFrom)
-      .setSubject('Reset your password');
+      .setSubject('Reset your password')
+      .setTemplateId(process.env.MAILERSEND_TEMPLATE_ID)
+      .setPersonalization(personalization);
 
-    mailerSend.email
-      .send(emailParams)
-      .then((response) => {
-        console.log('Email sent successfully:', response);
-      })
-      .catch((error) => {
-        console.error('Error sending email:', error);
-      });
+    await mailerSend.email.send(emailParams);
 
     return new HttpException('Email sent', HttpStatus.OK);
   }
