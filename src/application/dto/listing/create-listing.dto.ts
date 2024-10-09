@@ -6,7 +6,7 @@ import {
   IsString,
   Length,
 } from 'class-validator';
-import { Category } from '@/domain/listing/Category.enum';
+import { Category } from '@domain/listing/Category.enum';
 
 export class CreateListingDto {
   @IsNotEmpty()

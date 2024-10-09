@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { User } from '@/domain/user/User.entity';
-import { Listing } from '@/domain/listing/Listing.entity';
-import { ImageResource } from '@/domain/resource/ImageResource.entity';
-import { PasswordResetToken } from '@/domain/auth/PasswordResetToken.entity';
+import { User } from '@domain/user/User.entity';
+import { Listing } from '@domain/listing/Listing.entity';
+import { ImageResource } from '@domain/resource/ImageResource.entity';
+import { PasswordResetToken } from '@domain/auth/PasswordResetToken.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../user/User.entity';
-import { Category } from '@/domain/listing/Category.enum';
+import { Category } from '@domain/listing/Category.enum';
 
 @Entity({ name: 'listings' })
 export class Listing {

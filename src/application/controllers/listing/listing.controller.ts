@@ -9,11 +9,11 @@ import {
   Headers,
   Query,
 } from '@nestjs/common';
-import { ListingService } from '@/services/listing/listing.service';
-import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
-import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
-import { Pagination, PaginationParams } from '@/shared/pagination.helper';
-import { GetListingDto } from '@/application/dto/listing/get-listing.dto';
+import { ListingService } from '@services/listing/listing.service';
+import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
+import { CreateListingDto } from '@application/dto/listing/create-listing.dto';
+import { Pagination, PaginationParams } from '@shared/pagination.helper';
+import { GetListingDto } from '@application/dto/listing/get-listing.dto';
 
 @Controller('/listings')
 export class ListingController {

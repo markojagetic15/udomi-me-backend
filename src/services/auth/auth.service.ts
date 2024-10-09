@@ -5,14 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { User } from '@/domain/user/User.entity';
-import { encrypt } from '@/shared/encrypt';
-import { RegisterDto } from '@/application/dto/auth/register.dto';
-import { LoginDto } from '@/application/dto/auth/login.dto';
-import { UserRepository } from '@/infrastructure/user.repository';
-import { ForgotPasswordDto } from '@/application/dto/auth/forgot-password.dto';
-import { AuthRepository } from '@/infrastructure/auth.repository';
-import { ResetPasswordDto } from '@/application/dto/auth/reset-password.dto';
+import { User } from '@domain/user/User.entity';
+import { encrypt } from '@shared/encrypt';
+import { RegisterDto } from '@application/dto/auth/register.dto';
+import { LoginDto } from '@application/dto/auth/login.dto';
+import { UserRepository } from '@infrastructure/user.repository';
+import { ForgotPasswordDto } from '@application/dto/auth/forgot-password.dto';
+import { AuthRepository } from '@infrastructure/auth.repository';
+import { ResetPasswordDto } from '@application/dto/auth/reset-password.dto';
 import { EmailParams, MailerSend, Recipient, Sender } from 'mailersend';
 
 @Injectable()

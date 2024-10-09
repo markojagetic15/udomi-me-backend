@@ -10,11 +10,11 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { UpdateUserDto } from '@/application/dto/user/update-user.dto';
-import { JwtAuthGuard } from '@/shared/auth.guard';
-import { UserRepository } from '@/infrastructure/user.repository';
-import { Pagination } from '@/shared/pagination.helper';
-import { ListingRepository } from '@/infrastructure/listing.repository';
+import { UpdateUserDto } from '@application/dto/user/update-user.dto';
+import { JwtAuthGuard } from '@shared/auth.guard';
+import { UserRepository } from '@infrastructure/user.repository';
+import { Pagination } from '@shared/pagination.helper';
+import { ListingRepository } from '@infrastructure/listing.repository';
 
 @Injectable()
 export class UserService {

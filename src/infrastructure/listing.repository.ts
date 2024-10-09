@@ -1,8 +1,8 @@
-import { AppDataSource } from '@/config/data-source';
+import { AppDataSource } from '@config/data-source';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Listing } from '@/domain/listing/Listing.entity';
+import { Listing } from '@domain/listing/Listing.entity';
 import { UpdateResult } from 'typeorm';
-import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
+import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
 
 @Injectable()
 export class ListingRepository {

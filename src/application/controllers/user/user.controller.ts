@@ -7,9 +7,9 @@ import {
   Param,
   Put,
 } from '@nestjs/common';
-import { UserService } from '@/services/user/user.service';
-import { UpdateUserDto } from '@/application/dto/user/update-user.dto';
-import { Pagination, PaginationParams } from '@/shared/pagination.helper';
+import { UserService } from '@services/user/user.service';
+import { UpdateUserDto } from '@application/dto/user/update-user.dto';
+import { Pagination, PaginationParams } from '@shared/pagination.helper';
 
 @Controller()
 export class UserController {

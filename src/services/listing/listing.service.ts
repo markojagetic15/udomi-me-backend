@@ -5,17 +5,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { Listing } from '@/domain/listing/Listing.entity';
+import { Listing } from '@domain/listing/Listing.entity';
 import { UserService } from '../user/user.service';
-import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
-import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
-import { Pagination } from '@/shared/pagination.helper';
-import { ListingResponseDto } from '@/application/dto/listing/listing-response.dto';
+import { CreateListingDto } from '@application/dto/listing/create-listing.dto';
+import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
+import { Pagination } from '@shared/pagination.helper';
+import { ListingResponseDto } from '@application/dto/listing/listing-response.dto';
 import { plainToClass } from 'class-transformer';
-import { ListingRepository } from '@/infrastructure/listing.repository';
-import { UserRepository } from '@/infrastructure/user.repository';
-import { Category } from '@/domain/listing/Category.enum';
-import { GetListingDto } from '@/application/dto/listing/get-listing.dto';
+import { ListingRepository } from '@infrastructure/listing.repository';
+import { UserRepository } from '@infrastructure/user.repository';
+import { Category } from '@domain/listing/Category.enum';
+import { GetListingDto } from '@application/dto/listing/get-listing.dto';
 import { Like } from 'typeorm';
 
 @Injectable()
