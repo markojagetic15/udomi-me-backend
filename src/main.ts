@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { AppDataSource } from './config/data-source';
+import { AppDataSource } from '@config/data-source';
 import { ValidationPipe } from '@nestjs/common';
 
-const { PORT = 3000 } = process.env;
+const { PORT = 9000 } = process.env;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
