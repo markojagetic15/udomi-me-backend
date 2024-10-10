@@ -30,7 +30,7 @@ export class ListingService {
     body: CreateListingDto,
     headers: { authorization: string },
   ) {
-    const { title, description, images, address, phone_number, email } = body;
+    const { phone_number, email } = body;
 
     const { user } = await this.userService.getMe(headers);
 
@@ -47,13 +47,8 @@ export class ListingService {
 
     const listing = new Listing();
 
-    listing.title = title;
-    listing.description = description;
-    listing.images = images || [];
-    listing.address = address;
-    listing.phone_number = phone_number;
-    listing.email = email;
-    listing.user = user;
+    Object.assign(listing, body);
+
     listing.id = uuidv4();
     listing.category = body.category || Category.OTHER;
 
@@ -64,6 +59,7 @@ export class ListingService {
     }
 
     await this.userRepository.save(user);
+
     await this.listingRepository.save(listing);
 
     const responseDto = plainToClass(ListingResponseDto, listing);
