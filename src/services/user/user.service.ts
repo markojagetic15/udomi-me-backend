@@ -1,13 +1,10 @@
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
 import {
-  Body,
-  Headers,
   HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
-  Param,
   UseGuards,
 } from '@nestjs/common';
 import { UpdateUserDto } from '@application/dto/user/update-user.dto';
@@ -23,16 +20,7 @@ export class UserService {
     private readonly listingRepository: ListingRepository,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
-  async getMe(@Headers() headers: { authorization: string }) {
-    const header = headers.authorization;
-
-    if (!header) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    }
-
-    const token = header.split(' ')[1];
-
+  async getMe(token: string) {
     if (!token) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
@@ -55,12 +43,8 @@ export class UserService {
   }
 
   @UseGuards(JwtAuthGuard)
-  async updateUser(
-    @Param('id') id: string,
-    @Body() body: UpdateUserDto,
-    @Headers() headers: { authorization: string },
-  ) {
-    const { user: me } = await this.getMe(headers);
+  async updateUser(id: string, body: UpdateUserDto, token: string) {
+    const { user: me } = await this.getMe(token);
 
     if (me.id !== id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -79,11 +63,8 @@ export class UserService {
   }
 
   @UseGuards(JwtAuthGuard)
-  async deleteUser(
-    @Param('id') id: string,
-    @Headers() headers: { authorization: string },
-  ) {
-    const { user: me } = await this.getMe(headers);
+  async deleteUser(id: string, token: string) {
+    const { user: me } = await this.getMe(token);
 
     if (me.id !== id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);

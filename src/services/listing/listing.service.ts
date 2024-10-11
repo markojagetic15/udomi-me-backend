@@ -26,13 +26,10 @@ export class ListingService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async createListing(
-    body: CreateListingDto,
-    headers: { authorization: string },
-  ) {
+  async createListing(body: CreateListingDto, token: string) {
     const { title, description, images, address, phone_number, email } = body;
 
-    const { user } = await this.userService.getMe(headers);
+    const { user } = await this.userService.getMe(token);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -102,7 +99,7 @@ export class ListingService {
   }
 
   async getMyListings(
-    headers: { authorization: string },
+    token: string,
     paginationParams: Pagination,
     query: { search: string },
   ) {
@@ -113,7 +110,7 @@ export class ListingService {
       ? { title: Like(`%${query.search}%`) }
       : {};
 
-    const { user } = await this.userService.getMe(headers);
+    const { user } = await this.userService.getMe(token);
 
     const [listings, total] = await this.listingRepository.findAndCount({
       where: { user: user, ...searchCondition },
