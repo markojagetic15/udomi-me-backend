@@ -12,7 +12,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix('/api');
   app.enableCors({
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL_PROD, process.env.CLIENT_URL_LOCAL],
     credentials: true,
   });
   await app.listen(PORT);
