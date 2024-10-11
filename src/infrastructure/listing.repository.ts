@@ -1,8 +1,8 @@
-import { AppDataSource } from '@/config/data-source';
+import { AppDataSource } from '@config/data-source';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Listing } from '@/domain/listing/Listing.entity';
+import { Listing } from '@domain/listing/Listing.entity';
 import { UpdateResult } from 'typeorm';
-import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
+import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
 
 @Injectable()
 export class ListingRepository {
@@ -37,10 +37,7 @@ export class ListingRepository {
 
   async update(id: string, listing: UpdateListingDto): Promise<UpdateResult> {
     try {
-      return this.listingRepository.update(
-        { id },
-        { ...listing, updated_at: new Date() },
-      );
+      return this.listingRepository.update({ id }, { ...listing });
     } catch (e) {
       console.error(e);
       throw new HttpException(
@@ -66,6 +63,7 @@ export class ListingRepository {
     where?: Record<string, any>;
     take?: number;
     skip?: number;
+    order?: Record<string, 'ASC' | 'DESC'>;
   }): Promise<[Listing[], number]> {
     try {
       return this.listingRepository.findAndCount(options);

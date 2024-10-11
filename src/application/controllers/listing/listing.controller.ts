@@ -6,12 +6,14 @@ import {
   Param,
   Post,
   Put,
-  Headers,
+  Query,
 } from '@nestjs/common';
-import { ListingService } from '@/services/listing/listing.service';
-import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
-import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
-import { Pagination, PaginationParams } from '@/shared/pagination.helper';
+import { ListingService } from '@services/listing/listing.service';
+import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
+import { CreateListingDto } from '@application/dto/listing/create-listing.dto';
+import { Pagination, PaginationParams } from '@shared/pagination.helper';
+import { GetListingDto } from '@application/dto/listing/get-listing.dto';
+import { Cookies } from '@shared/cookie.helper';
 
 @Controller('/listings')
 export class ListingController {
@@ -20,9 +22,9 @@ export class ListingController {
   @Post('/')
   createListing(
     @Body() body: CreateListingDto,
-    @Headers() headers: { authorization: string },
+    @Cookies('token') token: string,
   ) {
-    return this.listingService.createListing(body, headers);
+    return this.listingService.createListing(body, token);
   }
 
   @Put('/:id')
@@ -37,15 +39,20 @@ export class ListingController {
 
   @Get('/user')
   getMyListing(
-    @Headers() headers: { authorization: string },
+    @Cookies('token') token: string,
     @PaginationParams() paginationParams: Pagination,
+    @Query() query: { search: string },
   ) {
-    return this.listingService.getMyListings(headers, paginationParams);
+    return this.listingService.getMyListings(token, paginationParams, query);
   }
 
   @Get('/')
-  getAllListings(@PaginationParams() paginationParams: Pagination) {
-    return this.listingService.getAllListings(paginationParams);
+  getAllListings(
+    @PaginationParams() paginationParams: Pagination,
+    @Body() body: GetListingDto,
+    @Query() query: { search: string },
+  ) {
+    return this.listingService.getAllListings(paginationParams, body, query);
   }
 
   @Get('/:id')

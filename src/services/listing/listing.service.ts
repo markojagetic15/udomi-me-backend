@@ -5,15 +5,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { Listing } from '@/domain/listing/Listing.entity';
+import { Listing } from '@domain/listing/Listing.entity';
 import { UserService } from '../user/user.service';
-import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
-import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
-import { Pagination } from '@/shared/pagination.helper';
-import { ListingResponseDto } from '@/application/dto/listing/listing-response.dto';
+import { CreateListingDto } from '@application/dto/listing/create-listing.dto';
+import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
+import { Pagination } from '@shared/pagination.helper';
+import { ListingResponseDto } from '@application/dto/listing/listing-response.dto';
 import { plainToClass } from 'class-transformer';
-import { ListingRepository } from '@/infrastructure/listing.repository';
-import { UserRepository } from '@/infrastructure/user.repository';
+import { ListingRepository } from '@infrastructure/listing.repository';
+import { UserRepository } from '@infrastructure/user.repository';
+import { Category } from '@domain/listing/Category.enum';
+import { GetListingDto } from '@application/dto/listing/get-listing.dto';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class ListingService {
@@ -23,13 +26,10 @@ export class ListingService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async createListing(
-    body: CreateListingDto,
-    headers: { authorization: string },
-  ) {
+  async createListing(body: CreateListingDto, token: string) {
     const { title, description, images, address, phone_number, email } = body;
 
-    const { user } = await this.userService.getMe(headers);
+    const { user } = await this.userService.getMe(token);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -44,16 +44,10 @@ export class ListingService {
 
     const listing = new Listing();
 
-    listing.title = title;
-    listing.description = description;
-    listing.images = images || [];
-    listing.address = address;
-    listing.phone_number = phone_number;
-    listing.email = email;
-    listing.user = user;
+    Object.assign(listing, body);
+
     listing.id = uuidv4();
-    listing.created_at = new Date();
-    listing.updated_at = new Date();
+    listing.category = body.category || Category.OTHER;
 
     if (!user.listings) {
       user.listings = [listing];
@@ -62,6 +56,7 @@ export class ListingService {
     }
 
     await this.userRepository.save(user);
+
     await this.listingRepository.save(listing);
 
     const responseDto = plainToClass(ListingResponseDto, listing);
@@ -100,17 +95,21 @@ export class ListingService {
   }
 
   async getMyListings(
-    headers: { authorization: string },
+    token: string,
     paginationParams: Pagination,
+    query: { search: string },
   ) {
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
+    const searchCondition = query.search
+      ? { title: Like(`%${query.search}%`) }
+      : {};
 
-    const { user } = await this.userService.getMe(headers);
+    const { user } = await this.userService.getMe(token);
 
     const [listings, total] = await this.listingRepository.findAndCount({
-      where: { user: user },
+      where: { user: user, ...searchCondition },
       take: paginationParams.limit,
       skip,
     });
@@ -126,14 +125,27 @@ export class ListingService {
     };
   }
 
-  async getAllListings(paginationParams: Pagination) {
+  async getAllListings(
+    paginationParams: Pagination,
+    body: GetListingDto,
+    query: { search: string },
+  ) {
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
+    const searchCondition = query.search
+      ? { title: Like(`%${query.search}%`) }
+      : {};
+
+    const { category, order } = body;
 
     const [listings, total] = await this.listingRepository.findAndCount({
       take: paginationParams.limit,
       skip,
+      where: category
+        ? category.map((cat) => ({ category: cat, ...searchCondition }))
+        : { category: [], ...searchCondition },
+      order: order ? { created_at: order } : { created_at: 'DESC' },
     });
 
     return {
@@ -148,7 +160,7 @@ export class ListingService {
   }
 
   async getListingById(id: string) {
-    const listing = await this.listingRepository.findById(id);
+    const listing = await this.listingRepository.findById(id, ['user']);
 
     if (!listing) {
       return new NotFoundException('Listing not found');
