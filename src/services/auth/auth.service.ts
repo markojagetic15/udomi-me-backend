@@ -60,7 +60,7 @@ export class AuthService {
 
     const existingUser = await this.userRepository.findByEmail(email);
 
-    if (existingUser.email === email) {
+    if (existingUser?.email === email) {
       throw new HttpException(
         'Email is already registered',
         HttpStatus.CONFLICT,
