@@ -1,8 +1,10 @@
 import {
   IsArray,
+  IsDate,
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Length,
 } from 'class-validator';
@@ -43,4 +45,21 @@ export class CreateListingDto {
   @IsString()
   @IsEnum(Category)
   category: Category;
+
+  @IsOptional()
+  @IsString()
+  @IsDate()
+  date_of_birth: Date;
+
+  @IsNotEmpty()
+  @IsString()
+  is_vaccinated: boolean;
+
+  @IsOptional()
+  @IsString()
+  breed: string;
+
+  @IsNotEmpty()
+  @IsString()
+  gender: 'male' | 'female';
 }

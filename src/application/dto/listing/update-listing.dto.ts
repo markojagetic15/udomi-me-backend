@@ -1,6 +1,8 @@
 import {
   IsArray,
+  IsDate,
   IsEmail,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Length,
@@ -36,4 +38,21 @@ export class UpdateListingDto {
   @IsString()
   @IsEmail()
   email: string;
+
+  @IsOptional()
+  @IsString()
+  @IsDate()
+  date_of_birth: Date;
+
+  @IsOptional()
+  @IsString()
+  is_vaccinated: boolean;
+
+  @IsOptional()
+  @IsString()
+  breed: string;
+
+  @IsOptional()
+  @IsString()
+  gender: 'male' | 'female';
 }

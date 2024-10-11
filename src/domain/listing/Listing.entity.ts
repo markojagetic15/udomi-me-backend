@@ -33,6 +33,18 @@ export class Listing {
   email: string;
 
   @Column({ nullable: true })
+  date_of_birth: Date;
+
+  @Column({ nullable: false })
+  is_vaccinated: boolean;
+
+  @Column({ nullable: true })
+  breed: string;
+
+  @Column({ nullable: false })
+  gender: 'male' | 'female';
+
+  @Column({ nullable: true })
   category: Category;
 
   @ManyToOne(() => User, (user) => user.listings, { onDelete: 'CASCADE' })
