@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../user/User.entity';
-import { Category } from '@/domain/listing/Category.enum';
+import { Category } from '@domain/listing/Category.enum';
 
 @Entity({ name: 'listings' })
 export class Listing {
@@ -31,6 +31,18 @@ export class Listing {
 
   @Column({ nullable: true })
   email: string;
+
+  @Column({ nullable: true })
+  date_of_birth: Date;
+
+  @Column({ nullable: false })
+  is_vaccinated: boolean;
+
+  @Column({ nullable: true })
+  breed: string;
+
+  @Column({ nullable: false })
+  gender: 'male' | 'female';
 
   @Column({ nullable: true })
   category: Category;

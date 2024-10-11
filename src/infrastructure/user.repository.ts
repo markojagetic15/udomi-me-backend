@@ -1,5 +1,5 @@
-import { User } from '@/domain/user/User.entity';
-import { AppDataSource } from '@/config/data-source';
+import { User } from '@domain/user/User.entity';
+import { AppDataSource } from '@config/data-source';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 @Injectable()

@@ -1,10 +1,10 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity({
   name: 'password_reset_tokens',
 })
 export class PasswordResetToken {
-  @Column()
+  @PrimaryColumn()
   token: string;
 
   @Column()

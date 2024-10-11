@@ -1,12 +1,14 @@
 import {
   IsArray,
+  IsDate,
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Length,
 } from 'class-validator';
-import { Category } from '@/domain/listing/Category.enum';
+import { Category } from '@domain/listing/Category.enum';
 
 export class CreateListingDto {
   @IsNotEmpty()
@@ -43,4 +45,21 @@ export class CreateListingDto {
   @IsString()
   @IsEnum(Category)
   category: Category;
+
+  @IsOptional()
+  @IsString()
+  @IsDate()
+  date_of_birth: Date;
+
+  @IsNotEmpty()
+  @IsString()
+  is_vaccinated: boolean;
+
+  @IsOptional()
+  @IsString()
+  breed: string;
+
+  @IsNotEmpty()
+  @IsString()
+  gender: 'male' | 'female';
 }

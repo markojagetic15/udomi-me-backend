@@ -5,17 +5,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { Listing } from '@/domain/listing/Listing.entity';
+import { Listing } from '@domain/listing/Listing.entity';
 import { UserService } from '../user/user.service';
-import { CreateListingDto } from '@/application/dto/listing/create-listing.dto';
-import { UpdateListingDto } from '@/application/dto/listing/update-listing.dto';
-import { Pagination } from '@/shared/pagination.helper';
-import { ListingResponseDto } from '@/application/dto/listing/listing-response.dto';
+import { CreateListingDto } from '@application/dto/listing/create-listing.dto';
+import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
+import { Pagination } from '@shared/pagination.helper';
+import { ListingResponseDto } from '@application/dto/listing/listing-response.dto';
 import { plainToClass } from 'class-transformer';
-import { ListingRepository } from '@/infrastructure/listing.repository';
-import { UserRepository } from '@/infrastructure/user.repository';
-import { Category } from '@/domain/listing/Category.enum';
-import { GetListingDto } from '@/application/dto/listing/get-listing.dto';
+import { ListingRepository } from '@infrastructure/listing.repository';
+import { UserRepository } from '@infrastructure/user.repository';
+import { Category } from '@domain/listing/Category.enum';
+import { GetListingDto } from '@application/dto/listing/get-listing.dto';
 import { Like } from 'typeorm';
 
 @Injectable()
@@ -26,13 +26,10 @@ export class ListingService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async createListing(
-    body: CreateListingDto,
-    headers: { authorization: string },
-  ) {
+  async createListing(body: CreateListingDto, token: string) {
     const { title, description, images, address, phone_number, email } = body;
 
-    const { user } = await this.userService.getMe(headers);
+    const { user } = await this.userService.getMe(token);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -47,13 +44,8 @@ export class ListingService {
 
     const listing = new Listing();
 
-    listing.title = title;
-    listing.description = description;
-    listing.images = images || [];
-    listing.address = address;
-    listing.phone_number = phone_number;
-    listing.email = email;
-    listing.user = user;
+    Object.assign(listing, body);
+
     listing.id = uuidv4();
     listing.category = body.category || Category.OTHER;
 
@@ -64,6 +56,7 @@ export class ListingService {
     }
 
     await this.userRepository.save(user);
+
     await this.listingRepository.save(listing);
 
     const responseDto = plainToClass(ListingResponseDto, listing);
@@ -102,7 +95,7 @@ export class ListingService {
   }
 
   async getMyListings(
-    headers: { authorization: string },
+    token: string,
     paginationParams: Pagination,
     query: { search: string },
   ) {
@@ -113,7 +106,7 @@ export class ListingService {
       ? { title: Like(`%${query.search}%`) }
       : {};
 
-    const { user } = await this.userService.getMe(headers);
+    const { user } = await this.userService.getMe(token);
 
     const [listings, total] = await this.listingRepository.findAndCount({
       where: { user: user, ...searchCondition },

@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { User } from '@/domain/user/User.entity';
+import { User } from '@domain/user/User.entity';
 
 export class ListingResponseDto {
   id: string;

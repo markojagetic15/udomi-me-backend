@@ -5,8 +5,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ResourceService } from '@/services/resource/resource.service';
-import { upload } from '@/shared/upload';
+import { ResourceService } from '@services/resource/resource.service';
+import { upload } from '@shared/upload';
 
 @Controller('/resources')
 export class ResourceController {

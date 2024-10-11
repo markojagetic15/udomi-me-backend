@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { AppDataSource } from '@/config/data-source';
-import { PasswordResetToken } from '@/domain/auth/PasswordResetToken.entity';
+import { AppDataSource } from '@config/data-source';
+import { PasswordResetToken } from '@domain/auth/PasswordResetToken.entity';
 
 @Injectable()
 export class AuthRepository {
