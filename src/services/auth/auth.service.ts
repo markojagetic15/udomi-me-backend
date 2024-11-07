@@ -35,7 +35,12 @@ export class AuthService {
     const isPasswordValid = encrypt.comparepassword(user.password, password);
 
     if (!isPasswordValid) {
-      throw new HttpException('Password is not valid', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        {
+          message: 'Password is incorrect',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const token = encrypt.generateToken({ id: user.id });

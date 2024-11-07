@@ -11,10 +11,21 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix('/api');
+
+  const allowedOrigins = ['https://udomi-me.com', 'http://localhost:3000'];
+
   app.enableCors({
-    origin: [process.env.CLIENT_URL_PROD, process.env.CLIENT_URL_LOCAL],
-    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // Include this if your requests include cookies or authorization headers
   });
+
   await app.listen(PORT);
 }
 

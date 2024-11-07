@@ -41,8 +41,7 @@ export class UpdateListingDto {
 
   @IsOptional()
   @IsString()
-  @IsDate()
-  date_of_birth: Date;
+  date_of_birth: string;
 
   @IsOptional()
   @IsString()

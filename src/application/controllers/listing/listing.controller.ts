@@ -12,7 +12,6 @@ import { ListingService } from '@services/listing/listing.service';
 import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
 import { CreateListingDto } from '@application/dto/listing/create-listing.dto';
 import { Pagination, PaginationParams } from '@shared/pagination.helper';
-import { GetListingDto } from '@application/dto/listing/get-listing.dto';
 import { Cookies } from '@shared/cookie.helper';
 
 @Controller('/listings')
@@ -49,10 +48,10 @@ export class ListingController {
   @Get('/')
   getAllListings(
     @PaginationParams() paginationParams: Pagination,
-    @Body() body: GetListingDto,
-    @Query() query: { search: string },
+    @Query()
+    query: { search: string; category: string; order: 'ASC' | 'DESC' },
   ) {
-    return this.listingService.getAllListings(paginationParams, body, query);
+    return this.listingService.getAllListings(paginationParams, query);
   }
 
   @Get('/:id')

@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsDate,
   IsEmail,
   IsEnum,
@@ -17,6 +18,7 @@ export class CreateListingDto {
   title: string;
 
   @IsNotEmpty()
+  @IsString()
   @Length(5, 500)
   description: string;
 
@@ -48,18 +50,17 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsString()
-  @IsDate()
   date_of_birth: Date;
 
   @IsNotEmpty()
-  @IsString()
+  @IsBoolean()
   is_vaccinated: boolean;
 
   @IsOptional()
   @IsString()
   breed: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   gender: 'male' | 'female';
 }

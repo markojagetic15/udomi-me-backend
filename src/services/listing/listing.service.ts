@@ -27,7 +27,7 @@ export class ListingService {
   ) {}
 
   async createListing(body: CreateListingDto, token: string) {
-    const { title, description, images, address, phone_number, email } = body;
+    const { phone_number, email } = body;
 
     const { user } = await this.userService.getMe(token);
 
@@ -48,6 +48,7 @@ export class ListingService {
 
     listing.id = uuidv4();
     listing.category = body.category || Category.OTHER;
+    listing.user = user;
 
     if (!user.listings) {
       user.listings = [listing];
@@ -109,7 +110,10 @@ export class ListingService {
     const { user } = await this.userService.getMe(token);
 
     const [listings, total] = await this.listingRepository.findAndCount({
-      where: { user: user, ...searchCondition },
+      where: {
+        user: { id: user.id },
+        ...searchCondition,
+      },
       take: paginationParams.limit,
       skip,
     });
@@ -127,24 +131,23 @@ export class ListingService {
 
   async getAllListings(
     paginationParams: Pagination,
-    body: GetListingDto,
-    query: { search: string },
+    query: { search: string; category: string; order: 'ASC' | 'DESC' },
   ) {
+    const { category, order, search } = query;
     const take = paginationParams.limit || 10;
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
-    const searchCondition = query.search
-      ? { title: Like(`%${query.search}%`) }
+    const searchCondition = search
+      ? { title: Like(`%${search.toLowerCase()}%`) }
       : {};
-
-    const { category, order } = body;
+    const categories = category ? (JSON.parse(category) as Category[]) : [];
 
     const [listings, total] = await this.listingRepository.findAndCount({
       take: paginationParams.limit,
       skip,
       where: category
-        ? category.map((cat) => ({ category: cat, ...searchCondition }))
-        : { category: [], ...searchCondition },
+        ? categories.map((cat) => ({ category: cat, ...searchCondition }))
+        : { ...searchCondition },
       order: order ? { created_at: order } : { created_at: 'DESC' },
     });
 

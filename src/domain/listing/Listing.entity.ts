@@ -33,15 +33,15 @@ export class Listing {
   email: string;
 
   @Column({ nullable: true })
-  date_of_birth: Date;
+  date_of_birth: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   is_vaccinated: boolean;
 
   @Column({ nullable: true })
   breed: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   gender: 'male' | 'female';
 
   @Column({ nullable: true })
