@@ -55,4 +55,10 @@ export class Listing {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
+
+  @Column({ nullable: true })
+  interested_users: string[];
+
+  @Column({ nullable: true })
+  urgent: boolean;
 }

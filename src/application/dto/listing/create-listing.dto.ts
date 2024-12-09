@@ -1,7 +1,6 @@
 import {
   IsArray,
   IsBoolean,
-  IsDate,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -14,7 +13,7 @@ import { Category } from '@domain/listing/Category.enum';
 export class CreateListingDto {
   @IsNotEmpty()
   @IsString()
-  @Length(5, 50)
+  @Length(1, 50)
   title: string;
 
   @IsNotEmpty()
@@ -56,11 +55,14 @@ export class CreateListingDto {
   @IsBoolean()
   is_vaccinated: boolean;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   breed: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   gender: 'male' | 'female';
+
+  @IsOptional()
+  urgent: boolean;
 }

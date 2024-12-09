@@ -33,4 +33,10 @@ export class User {
 
   @OneToMany(() => Listing, (listing) => listing.user)
   listings: Listing[];
+
+  @OneToMany(() => Listing, (listing) => listing.user)
+  favorite_listings: Listing[];
+
+  @Column({ nullable: true })
+  interested_listings: string[];
 }

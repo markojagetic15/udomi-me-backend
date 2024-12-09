@@ -36,6 +36,16 @@ export class ListingController {
     return this.listingService.deleteListing(id);
   }
 
+  @Post('/:id/favorite')
+  favoriteListing(@Param('id') id: string, @Cookies('token') token: string) {
+    return this.listingService.favoriteListing(id, token);
+  }
+
+  @Post('/:id/report')
+  reportListing(@Param('id') id: string, @Cookies('token') token: string) {
+    return this.listingService.reportListing(id, token);
+  }
+
   @Get('/user')
   getMyListing(
     @Cookies('token') token: string,

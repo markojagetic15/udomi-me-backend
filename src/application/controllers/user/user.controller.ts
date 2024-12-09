@@ -34,4 +34,9 @@ export class UserController {
   ) {
     return this.userService.getUserListings(id, paginationParams);
   }
+
+  @Get('/user/:id')
+  async getUser(@Param('id') id: string) {
+    return this.userService.getUser(id);
+  }
 }

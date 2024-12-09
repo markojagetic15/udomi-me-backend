@@ -15,7 +15,6 @@ import { plainToClass } from 'class-transformer';
 import { ListingRepository } from '@infrastructure/listing.repository';
 import { UserRepository } from '@infrastructure/user.repository';
 import { Category } from '@domain/listing/Category.enum';
-import { GetListingDto } from '@application/dto/listing/get-listing.dto';
 import { Like } from 'typeorm';
 
 @Injectable()
@@ -49,6 +48,7 @@ export class ListingService {
     listing.id = uuidv4();
     listing.category = body.category || Category.OTHER;
     listing.user = user;
+    listing.interested_users = [];
 
     if (!user.listings) {
       user.listings = [listing];
@@ -170,5 +170,39 @@ export class ListingService {
     }
 
     return { listing };
+  }
+
+  async favoriteListing(id: string, token: string) {
+    const { user } = await this.userService.getMe(token);
+
+    const listing = await this.listingRepository.findById(id);
+
+    if (!listing) {
+      return new NotFoundException('Listing not found');
+    }
+
+    if (!user.favorite_listings) {
+      user.favorite_listings = [listing];
+    } else {
+      user.favorite_listings.push(listing);
+    }
+
+    await this.userRepository.save(user);
+
+    return { message: 'Listing favorited' };
+  }
+
+  async reportListing(id: string, token: string) {
+    const { user } = await this.userService.getMe(token);
+
+    const listing = await this.listingRepository.findById(id);
+
+    if (!listing) {
+      return new NotFoundException('Listing not found');
+    }
+
+    // TODO: Implement reporting logic
+
+    return { message: 'Listing reported' };
   }
 }

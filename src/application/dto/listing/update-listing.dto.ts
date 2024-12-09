@@ -54,4 +54,11 @@ export class UpdateListingDto {
   @IsOptional()
   @IsString()
   gender: 'male' | 'female';
+
+  @IsOptional()
+  @IsArray()
+  interested_users: string[];
+
+  @IsOptional()
+  urgent: boolean;
 }
