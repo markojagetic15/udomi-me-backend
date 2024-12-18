@@ -49,6 +49,8 @@ export class ListingService {
     listing.category = body.category || Category.OTHER;
     listing.user = user;
     listing.interested_users = [];
+    listing.is_active = true;
+    listing.is_adopted = false;
 
     if (!user.listings) {
       user.listings = [listing];
@@ -140,14 +142,21 @@ export class ListingService {
     const searchCondition = search
       ? { title: Like(`%${search.toLowerCase()}%`) }
       : {};
+    const isActive = { is_active: true };
+    const isAdopted = { is_adopted: false };
     const categories = category ? (JSON.parse(category) as Category[]) : [];
 
     const [listings, total] = await this.listingRepository.findAndCount({
       take: paginationParams.limit,
       skip,
       where: category
-        ? categories.map((cat) => ({ category: cat, ...searchCondition }))
-        : { ...searchCondition },
+        ? categories.map((cat) => ({
+            category: cat,
+            ...searchCondition,
+            ...isActive,
+            ...isAdopted,
+          }))
+        : { ...searchCondition, ...isActive, ...isAdopted },
       order: order ? { created_at: order } : { created_at: 'DESC' },
     });
 
@@ -187,7 +196,13 @@ export class ListingService {
       user.favorite_listings.push(listing);
     }
 
+    const updateListing = {
+      ...listing,
+      number_of_interested_users: listing.number_of_interested_users + 1,
+    };
+
     await this.userRepository.save(user);
+    await this.listingRepository.save(updateListing);
 
     return { message: 'Listing favorited' };
   }

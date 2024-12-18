@@ -61,4 +61,13 @@ export class Listing {
 
   @Column({ nullable: true })
   urgent: boolean;
+
+  @Column({ nullable: true })
+  is_adopted: boolean;
+
+  @Column({ nullable: true })
+  is_active: boolean;
+
+  @Column({ nullable: true })
+  number_of_interested_users: number;
 }
