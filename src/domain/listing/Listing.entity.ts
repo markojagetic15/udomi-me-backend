@@ -56,18 +56,18 @@ export class Listing {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @Column({ nullable: true })
+  @Column('text', { array: true, nullable: true })
   interested_users: string[];
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, default: false })
   urgent: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, default: false })
   is_adopted: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, default: true })
   is_active: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, default: 0 })
   number_of_interested_users: number;
 }

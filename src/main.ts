@@ -17,6 +17,8 @@ async function bootstrap() {
     'https://udomi-me.com/',
     'http://localhost:3000/',
     'http://localhost:3000',
+    'https://accounts.google.com',
+    'https://accounts.google.com/',
   ];
 
   app.enableCors({

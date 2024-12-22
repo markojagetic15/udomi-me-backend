@@ -11,6 +11,11 @@ import { ResourceService } from '@services/resource/resource.service';
 import { UserRepository } from '@infrastructure/user.repository';
 import { ListingRepository } from '@infrastructure/listing.repository';
 import { AuthRepository } from '@infrastructure/auth.repository';
+import { PassportModule } from '@nestjs/passport';
+import { User } from '@domain/user/User.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { GoogleStrategy } from './auth/strategies/google.strategy';
+import { AppDataSource } from '@config/data-source';
 
 @Module({
   imports: [
@@ -18,6 +23,9 @@ import { AuthRepository } from '@infrastructure/auth.repository';
       secret: process.env.JWT_SECRET || '',
       signOptions: { expiresIn: '1h' },
     }),
+    PassportModule,
+    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forRoot(AppDataSource.options),
   ],
   controllers: [
     UserController,
@@ -33,6 +41,8 @@ import { AuthRepository } from '@infrastructure/auth.repository';
     UserRepository,
     ListingRepository,
     AuthRepository,
+    GoogleStrategy,
   ],
+  exports: [TypeOrmModule],
 })
 export class AppModule {}

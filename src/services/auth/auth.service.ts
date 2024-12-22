@@ -15,10 +15,12 @@ import { AuthRepository } from '@infrastructure/auth.repository';
 import { ResetPasswordDto } from '@application/dto/auth/reset-password.dto';
 import { EmailParams, MailerSend, Recipient, Sender } from 'mailersend';
 import { Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private jwtService: JwtService,
     private readonly userRepository: UserRepository,
     private readonly authRepository: AuthRepository,
   ) {}
@@ -206,5 +208,47 @@ export class AuthService {
     res.clearCookie('token');
     res.cookie('token', '', {});
     return new HttpException('Logged out', HttpStatus.OK);
+  }
+
+  async googleLoginAndRegister(
+    profile: {
+      email: string;
+      firstName: string;
+      lastName: string;
+    },
+    res: Response,
+  ) {
+    const user = await this.userRepository.findByEmail(profile.email);
+    if (!user) {
+      const newUser = await this.userRepository.save({
+        email: profile.email,
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        created_at: new Date(),
+        updated_at: new Date(),
+        id: uuidv4(),
+        password: '',
+        listings: [],
+        favorite_listings: [],
+        interested_listings: [],
+      });
+
+      await this.userRepository.save(newUser);
+    }
+
+    const token = encrypt.generateToken({ id: user.id });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect(
+      `http://localhost:3000/google-callback?token=${token}&user=${encodeURIComponent(
+        JSON.stringify(user),
+      )}`,
+    );
   }
 }
