@@ -59,7 +59,7 @@ export class AuthService {
       );
     }
 
-    return { user };
+    return user;
   }
 
   async signup(body: RegisterDto, res: Response) {
@@ -116,7 +116,7 @@ export class AuthService {
       );
     }
 
-    return { user };
+    return user;
   }
 
   async forgotPassword(body: ForgotPasswordDto) {

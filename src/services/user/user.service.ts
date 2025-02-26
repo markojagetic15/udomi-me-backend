@@ -32,19 +32,19 @@ export class UserService {
     }
 
     const user = await this.userRepository.findById((decode as JwtPayload).id, [
-      'listings',
+      'favorite_listings',
     ]);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return { user };
+    return user;
   }
 
   @UseGuards(JwtAuthGuard)
   async updateUser(id: string, body: UpdateUserDto, token: string) {
-    const { user: me } = await this.getMe(token);
+    const me = await this.getMe(token);
 
     if (me.id !== id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -59,12 +59,12 @@ export class UserService {
     Object.assign(user, body);
     await this.userRepository.save(user);
 
-    return { user };
+    return user;
   }
 
   @UseGuards(JwtAuthGuard)
   async deleteUser(id: string, token: string) {
-    const { user: me } = await this.getMe(token);
+    const me = await this.getMe(token);
 
     if (me.id !== id) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -111,6 +111,16 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    return { user };
+    return user;
+  }
+
+  async getUserFavorites(id: string) {
+    const user = await this.userRepository.findById(id, ['favorite_listings']);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.favorite_listings;
   }
 }

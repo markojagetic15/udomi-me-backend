@@ -5,6 +5,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Listing } from '../listing/Listing.entity';
 
@@ -19,7 +21,7 @@ export class User {
   @Column({ nullable: false })
   last_name: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, unique: true })
   email: string;
 
   @Column({ nullable: false })
@@ -34,9 +36,11 @@ export class User {
   @OneToMany(() => Listing, (listing) => listing.user)
   listings: Listing[];
 
-  @OneToMany(() => Listing, (listing) => listing.user)
+  @ManyToMany(() => Listing)
+  @JoinTable({ name: 'user_favorite_listings' })
   favorite_listings: Listing[];
 
-  @Column('text', { array: true, nullable: true })
-  interested_listings: string[];
+  @ManyToMany(() => Listing)
+  @JoinTable({ name: 'user_interested_listings' })
+  interested_listings: Listing[];
 }

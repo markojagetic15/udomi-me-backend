@@ -21,6 +21,7 @@ export class UpdateListingDto {
   @IsOptional()
   @IsArray()
   images: {
+    position: number;
     url: string;
     id: string;
   }[];

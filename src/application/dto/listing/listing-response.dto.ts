@@ -5,7 +5,7 @@ export class ListingResponseDto {
   id: string;
   title: string;
   description: string;
-  images: { url: string; id: string }[];
+  images: { url: string; id: string; position: number }[];
   address: string;
   phone_number: string;
   email: string;

@@ -35,8 +35,13 @@ export class UserController {
     return this.userService.getUserListings(id, paginationParams);
   }
 
-  @Get('/user/:id')
+  @Get('/users/:id')
   async getUser(@Param('id') id: string) {
     return this.userService.getUser(id);
+  }
+
+  @Get('/users/:id/favorites')
+  async getUserFavorites(@Param('id') id: string) {
+    return this.userService.getUserFavorites(id);
   }
 }

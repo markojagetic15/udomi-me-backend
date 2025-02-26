@@ -1,7 +1,6 @@
 import {
   IsArray,
   IsBoolean,
-  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -18,36 +17,36 @@ export class CreateListingDto {
 
   @IsNotEmpty()
   @IsString()
-  @Length(5, 500)
+  @Length(5, 2000)
   description: string;
 
   @IsNotEmpty()
   @IsArray()
   images: {
+    position: number;
     url: string;
     id: string;
   }[];
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @Length(5, 500)
   address: string;
 
-  @IsNotEmpty()
   @IsString()
+  @IsOptional()
   phone_number: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  @IsEmail()
-  email: string;
+  area_code: string;
 
   @IsNotEmpty()
   @IsString()
   @IsEnum(Category)
   category: Category;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   date_of_birth: Date;
 
@@ -55,7 +54,7 @@ export class CreateListingDto {
   @IsBoolean()
   is_vaccinated: boolean;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   breed: string;
 
@@ -65,4 +64,7 @@ export class CreateListingDto {
 
   @IsOptional()
   urgent: boolean;
+
+  @IsOptional()
+  size: string;
 }

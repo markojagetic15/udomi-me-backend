@@ -26,41 +26,36 @@ export class ListingService {
   ) {}
 
   async createListing(body: CreateListingDto, token: string) {
-    const { phone_number, email } = body;
-
-    const { user } = await this.userService.getMe(token);
+    const user = await this.userService.getMe(token);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    if (!phone_number && !email) {
-      throw new HttpException(
-        'Phone number or email is required',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     const listing = new Listing();
-
     Object.assign(listing, body);
 
     listing.id = uuidv4();
     listing.category = body.category || Category.OTHER;
     listing.user = user;
-    listing.interested_users = [];
     listing.is_active = true;
     listing.is_adopted = false;
 
-    if (!user.listings) {
-      user.listings = [listing];
-    } else {
-      user.listings.push(listing);
+    await this.listingRepository.save(listing);
+
+    const userWithListings = await this.userRepository.findById(user.id, [
+      'listings',
+    ]);
+
+    if (!userWithListings) {
+      throw new NotFoundException(
+        'User not found after fetching relationships',
+      );
     }
 
-    await this.userRepository.save(user);
+    userWithListings.listings.push(listing);
 
-    await this.listingRepository.save(listing);
+    await this.userRepository.save(userWithListings);
 
     const responseDto = plainToClass(ListingResponseDto, listing);
 
@@ -109,7 +104,7 @@ export class ListingService {
       ? { title: Like(`%${query.search}%`) }
       : {};
 
-    const { user } = await this.userService.getMe(token);
+    const user = await this.userService.getMe(token);
 
     const [listings, total] = await this.listingRepository.findAndCount({
       where: {
@@ -182,33 +177,50 @@ export class ListingService {
   }
 
   async favoriteListing(id: string, token: string) {
-    const { user } = await this.userService.getMe(token);
+    const user = await this.userService.getMe(token);
 
     const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return new NotFoundException('Listing not found');
+      throw new NotFoundException('Listing not found');
     }
 
-    if (!user.favorite_listings) {
-      user.favorite_listings = [listing];
+    const userWithFavorites = await this.userRepository.findById(user.id, [
+      'favorite_listings',
+    ]);
+
+    if (!userWithFavorites) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isFavorited = userWithFavorites.favorite_listings.some(
+      (favListing) => favListing.id === listing.id,
+    );
+
+    if (isFavorited) {
+      userWithFavorites.favorite_listings =
+        userWithFavorites.favorite_listings.filter(
+          (favListing) => favListing.id !== listing.id,
+        );
     } else {
-      user.favorite_listings.push(listing);
+      userWithFavorites.favorite_listings.push(listing);
     }
 
-    const updateListing = {
-      ...listing,
-      number_of_interested_users: listing.number_of_interested_users + 1,
+    await this.userRepository.save(userWithFavorites);
+
+    listing.number_of_interested_users = isFavorited
+      ? listing.number_of_interested_users - 1
+      : listing.number_of_interested_users + 1;
+
+    await this.listingRepository.save(listing);
+
+    return {
+      message: isFavorited ? 'Listing unfavorited' : 'Listing favorited',
     };
-
-    await this.userRepository.save(user);
-    await this.listingRepository.save(updateListing);
-
-    return { message: 'Listing favorited' };
   }
 
   async reportListing(id: string, token: string) {
-    const { user } = await this.userService.getMe(token);
+    const user = await this.userService.getMe(token);
 
     const listing = await this.listingRepository.findById(id);
 

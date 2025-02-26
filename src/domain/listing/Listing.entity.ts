@@ -21,7 +21,7 @@ export class Listing {
   description: string;
 
   @Column('json', { nullable: true })
-  images: { url: string; id: string }[];
+  images: { url: string; id: string; position: number }[];
 
   @Column({ nullable: true })
   address: string;
@@ -70,4 +70,7 @@ export class Listing {
 
   @Column({ nullable: true, default: 0 })
   number_of_interested_users: number;
+
+  @Column({ nullable: true, default: '' })
+  size: string;
 }
