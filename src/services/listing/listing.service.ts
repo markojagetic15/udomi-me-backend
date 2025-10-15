@@ -15,7 +15,7 @@ import { plainToClass } from 'class-transformer';
 import { ListingRepository } from '@infrastructure/listing.repository';
 import { UserRepository } from '@infrastructure/user.repository';
 import { Category } from '@domain/listing/Category.enum';
-import { Like } from 'typeorm';
+import { ILike } from 'typeorm';
 
 @Injectable()
 export class ListingService {
@@ -101,7 +101,7 @@ export class ListingService {
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
     const searchCondition = query.search
-      ? { title: Like(`%${query.search}%`) }
+      ? { title: ILike(`%${query.search}%`) }
       : {};
 
     const user = await this.userService.getMe(token);
@@ -135,7 +135,7 @@ export class ListingService {
     const page = paginationParams.page || 1;
     const skip = (page - 1) * take;
     const searchCondition = search
-      ? { title: Like(`%${search.toLowerCase()}%`) }
+      ? { title: ILike(`%${search.toLowerCase().trim()}%`) }
       : {};
     const isActive = { is_active: true };
     const isAdopted = { is_adopted: false };

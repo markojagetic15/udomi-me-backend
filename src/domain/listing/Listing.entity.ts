@@ -44,7 +44,7 @@ export class Listing {
   @Column({ nullable: true })
   gender: 'male' | 'female';
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, enum: Category })
   category: Category;
 
   @ManyToOne(() => User, (user) => user.listings, { onDelete: 'CASCADE' })
