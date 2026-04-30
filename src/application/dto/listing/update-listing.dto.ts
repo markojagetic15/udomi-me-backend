@@ -1,8 +1,8 @@
 import {
   IsArray,
-  IsDate,
+  IsBoolean,
   IsEmail,
-  IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Length,
@@ -11,11 +11,11 @@ import {
 export class UpdateListingDto {
   @IsOptional()
   @IsString()
-  @Length(5, 50)
+  @Length(1, 50)
   title: string;
 
   @IsOptional()
-  @Length(5, 500)
+  @Length(5, 2000)
   description: string;
 
   @IsOptional()
@@ -45,7 +45,7 @@ export class UpdateListingDto {
   date_of_birth: string;
 
   @IsOptional()
-  @IsString()
+  @IsBoolean()
   is_vaccinated: boolean;
 
   @IsOptional()
@@ -61,5 +61,30 @@ export class UpdateListingDto {
   interested_users: string[];
 
   @IsOptional()
-  urgent: boolean;
+  @IsBoolean()
+  is_urgent: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  is_adopted: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  is_active: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  size: number;
+
+  @IsOptional()
+  @IsNumber()
+  lat: number;
+
+  @IsOptional()
+  @IsNumber()
+  lng: number;
+
+  @IsOptional()
+  @IsString()
+  area_code: string;
 }

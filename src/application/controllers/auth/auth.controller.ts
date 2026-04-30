@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -14,6 +15,19 @@ import { ForgotPasswordDto } from '@application/dto/auth/forgot-password.dto';
 import { ResetPasswordDto } from '@application/dto/auth/reset-password.dto';
 import { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { Cookies } from '@shared/cookie.helper';
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+
+class ChangePasswordDto {
+  @IsNotEmpty()
+  @IsString()
+  currentPassword: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  newPassword: string;
+}
 
 @Controller()
 export class AuthController {
@@ -35,6 +49,19 @@ export class AuthController {
     return this.authService.signup(body, res);
   }
 
+  @Get('/auth/verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @Post('/change-password')
+  async changePassword(
+    @Body() body: ChangePasswordDto,
+    @Cookies('token') token: string,
+  ) {
+    return this.authService.changePassword(token, body.currentPassword, body.newPassword);
+  }
+
   @Post('/forgot-password')
   async forgotPassword(@Body() body: ForgotPasswordDto) {
     return this.authService.forgotPassword(body);
@@ -52,21 +79,14 @@ export class AuthController {
 
   @Get('/google')
   @UseGuards(AuthGuard('google'))
-  async googleLogin() {
-    // Passport handles the redirection to Google's login page
-  }
+  async googleLogin() {}
 
   @Get('/auth/google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(
     @Req()
     req: {
-      user: {
-        email: string;
-        firstName: string;
-        lastName: string;
-        picture: string;
-      };
+      user: { email: string; firstName: string; lastName: string; picture: string };
     },
     @Res() res: Response,
   ) {

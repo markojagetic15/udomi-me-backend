@@ -60,7 +60,7 @@ export class Listing {
   interested_users: string[];
 
   @Column({ nullable: true, default: false })
-  urgent: boolean;
+  is_urgent: boolean;
 
   @Column({ nullable: true, default: false })
   is_adopted: boolean;
@@ -71,6 +71,15 @@ export class Listing {
   @Column({ nullable: true, default: 0 })
   number_of_interested_users: number;
 
-  @Column({ nullable: true, default: '' })
-  size: string;
+  @Column({ nullable: true, default: 0, type: 'float' })
+  size: number;
+
+  @Column({ nullable: true, type: 'float' })
+  lat: number;
+
+  @Column({ nullable: true, type: 'float' })
+  lng: number;
+
+  @Column({ nullable: true })
+  area_code: string;
 }

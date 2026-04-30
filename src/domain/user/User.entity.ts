@@ -24,8 +24,14 @@ export class User {
   @Column({ nullable: false, unique: true })
   email: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true, default: '' })
   password: string;
+
+  @Column({ nullable: true, default: false })
+  is_verified: boolean;
+
+  @Column({ nullable: true, type: 'text' })
+  verification_token: string;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

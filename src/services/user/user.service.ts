@@ -33,6 +33,7 @@ export class UserService {
 
     const user = await this.userRepository.findById((decode as JwtPayload).id, [
       'favorite_listings',
+      'interested_listings',
     ]);
 
     if (!user) {

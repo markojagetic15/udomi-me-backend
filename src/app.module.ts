@@ -19,9 +19,11 @@ import { AppDataSource } from '@config/data-source';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || '',
-      signOptions: { expiresIn: '1h' },
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET,
+        signOptions: { expiresIn: '1d' },
+      }),
     }),
     PassportModule,
     TypeOrmModule.forFeature([User]),

@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Length,
@@ -20,7 +21,7 @@ export class CreateListingDto {
   @Length(5, 2000)
   description: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsArray()
   images: {
     position: number;
@@ -63,8 +64,18 @@ export class CreateListingDto {
   gender: 'male' | 'female';
 
   @IsOptional()
-  urgent: boolean;
+  @IsBoolean()
+  is_urgent: boolean;
 
   @IsOptional()
-  size: string;
+  @IsNumber()
+  size: number;
+
+  @IsOptional()
+  @IsNumber()
+  lat: number;
+
+  @IsOptional()
+  @IsNumber()
+  lng: number;
 }

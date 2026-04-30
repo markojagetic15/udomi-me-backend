@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -10,8 +11,6 @@ import { UserService } from '../user/user.service';
 import { CreateListingDto } from '@application/dto/listing/create-listing.dto';
 import { UpdateListingDto } from '@application/dto/listing/update-listing.dto';
 import { Pagination } from '@shared/pagination.helper';
-import { ListingResponseDto } from '@application/dto/listing/listing-response.dto';
-import { plainToClass } from 'class-transformer';
 import { ListingRepository } from '@infrastructure/listing.repository';
 import { UserRepository } from '@infrastructure/user.repository';
 import { Category } from '@domain/listing/Category.enum';
@@ -40,6 +39,7 @@ export class ListingService {
     listing.user = user;
     listing.is_active = true;
     listing.is_adopted = false;
+    listing.is_urgent = body.is_urgent ?? false;
 
     await this.listingRepository.save(listing);
 
@@ -48,43 +48,38 @@ export class ListingService {
     ]);
 
     if (!userWithListings) {
-      throw new NotFoundException(
-        'User not found after fetching relationships',
-      );
+      throw new NotFoundException('User not found after fetching relationships');
     }
 
     userWithListings.listings.push(listing);
-
     await this.userRepository.save(userWithListings);
 
-    const responseDto = plainToClass(ListingResponseDto, listing);
-
-    return {
-      listing: responseDto,
-    };
+    return { listing };
   }
 
   async updateListing(id: string, body: UpdateListingDto) {
     const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return new NotFoundException('Listing not found');
+      throw new NotFoundException('Listing not found');
     }
 
-    const updatedListing = await this.listingRepository.update(listing.id, {
-      ...body,
-    });
+    await this.listingRepository.update(listing.id, { ...body });
 
-    const responseDto = plainToClass(ListingResponseDto, updatedListing);
-
-    return { listing: responseDto };
+    const updated = await this.listingRepository.findById(id);
+    return { listing: updated };
   }
 
-  async deleteListing(id: string) {
-    const listing = await this.listingRepository.findById(id);
+  async deleteListing(id: string, token: string) {
+    const user = await this.userService.getMe(token);
+    const listing = await this.listingRepository.findById(id, ['user']);
 
     if (!listing) {
-      return new NotFoundException('Listing not found');
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.user.id !== user.id) {
+      throw new ForbiddenException('You can only delete your own listings');
     }
 
     await this.listingRepository.remove(listing);
@@ -111,8 +106,9 @@ export class ListingService {
         user: { id: user.id },
         ...searchCondition,
       },
-      take: paginationParams.limit,
+      take,
       skip,
+      order: { created_at: 'DESC' },
     });
 
     return {
@@ -137,21 +133,19 @@ export class ListingService {
     const searchCondition = search
       ? { title: ILike(`%${search.toLowerCase().trim()}%`) }
       : {};
-    const isActive = { is_active: true };
-    const isAdopted = { is_adopted: false };
+    const baseWhere = { is_active: true, is_adopted: false };
     const categories = category ? (JSON.parse(category) as Category[]) : [];
 
     const [listings, total] = await this.listingRepository.findAndCount({
-      take: paginationParams.limit,
+      take,
       skip,
       where: category
         ? categories.map((cat) => ({
             category: cat,
             ...searchCondition,
-            ...isActive,
-            ...isAdopted,
+            ...baseWhere,
           }))
-        : { ...searchCondition, ...isActive, ...isAdopted },
+        : { ...searchCondition, ...baseWhere },
       order: order ? { created_at: order } : { created_at: 'DESC' },
     });
 
@@ -170,7 +164,7 @@ export class ListingService {
     const listing = await this.listingRepository.findById(id, ['user']);
 
     if (!listing) {
-      return new NotFoundException('Listing not found');
+      throw new NotFoundException('Listing not found');
     }
 
     return { listing };
@@ -178,7 +172,6 @@ export class ListingService {
 
   async favoriteListing(id: string, token: string) {
     const user = await this.userService.getMe(token);
-
     const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
@@ -194,41 +187,96 @@ export class ListingService {
     }
 
     const isFavorited = userWithFavorites.favorite_listings.some(
-      (favListing) => favListing.id === listing.id,
+      (l) => l.id === listing.id,
     );
 
     if (isFavorited) {
       userWithFavorites.favorite_listings =
-        userWithFavorites.favorite_listings.filter(
-          (favListing) => favListing.id !== listing.id,
-        );
+        userWithFavorites.favorite_listings.filter((l) => l.id !== listing.id);
     } else {
       userWithFavorites.favorite_listings.push(listing);
     }
 
     await this.userRepository.save(userWithFavorites);
 
-    listing.number_of_interested_users = isFavorited
-      ? listing.number_of_interested_users - 1
-      : listing.number_of_interested_users + 1;
-
-    await this.listingRepository.save(listing);
-
     return {
       message: isFavorited ? 'Listing unfavorited' : 'Listing favorited',
     };
   }
 
-  async reportListing(id: string, token: string) {
+  async showInterest(id: string, token: string) {
     const user = await this.userService.getMe(token);
+    const listing = await this.listingRepository.findById(id, ['user']);
 
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.user.id === user.id) {
+      throw new ForbiddenException('You cannot show interest in your own listing');
+    }
+
+    const userWithInterested = await this.userRepository.findById(user.id, [
+      'interested_listings',
+    ]);
+
+    if (!userWithInterested) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isInterested = userWithInterested.interested_listings.some(
+      (l) => l.id === listing.id,
+    );
+
+    if (isInterested) {
+      userWithInterested.interested_listings =
+        userWithInterested.interested_listings.filter((l) => l.id !== listing.id);
+      listing.number_of_interested_users = Math.max(
+        0,
+        (listing.number_of_interested_users || 0) - 1,
+      );
+    } else {
+      userWithInterested.interested_listings.push(listing);
+      listing.number_of_interested_users =
+        (listing.number_of_interested_users || 0) + 1;
+    }
+
+    await this.userRepository.save(userWithInterested);
+    await this.listingRepository.save(listing);
+
+    return {
+      message: isInterested ? 'Interest removed' : 'Interest shown',
+      isInterested: !isInterested,
+      number_of_interested_users: listing.number_of_interested_users,
+    };
+  }
+
+  async markAsAdopted(id: string, token: string) {
+    const user = await this.userService.getMe(token);
+    const listing = await this.listingRepository.findById(id, ['user']);
+
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.user.id !== user.id) {
+      throw new ForbiddenException('You can only mark your own listings as adopted');
+    }
+
+    listing.is_adopted = true;
+    listing.is_active = false;
+
+    await this.listingRepository.save(listing);
+
+    return { message: 'Listing marked as adopted', listing };
+  }
+
+  async reportListing(id: string, token: string) {
     const listing = await this.listingRepository.findById(id);
 
     if (!listing) {
-      return new NotFoundException('Listing not found');
+      throw new NotFoundException('Listing not found');
     }
-
-    // TODO: Implement reporting logic
 
     return { message: 'Listing reported' };
   }

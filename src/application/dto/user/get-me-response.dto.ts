@@ -5,6 +5,7 @@ export class GetMeResponseDto {
   email: string;
   created_at: Date;
   avatar: string;
-  favorite_listings: string[];
-  listings: string[];
+  favorite_listings: { id: string }[];
+  interested_listings: { id: string }[];
+  listings: { id: string }[];
 }

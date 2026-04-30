@@ -32,13 +32,23 @@ export class ListingController {
   }
 
   @Delete('/:id')
-  deleteListing(@Param('id') id: string) {
-    return this.listingService.deleteListing(id);
+  deleteListing(@Param('id') id: string, @Cookies('token') token: string) {
+    return this.listingService.deleteListing(id, token);
   }
 
   @Post('/:id/favorite')
   favoriteListing(@Param('id') id: string, @Cookies('token') token: string) {
     return this.listingService.favoriteListing(id, token);
+  }
+
+  @Post('/:id/interest')
+  showInterest(@Param('id') id: string, @Cookies('token') token: string) {
+    return this.listingService.showInterest(id, token);
+  }
+
+  @Post('/:id/adopt')
+  markAsAdopted(@Param('id') id: string, @Cookies('token') token: string) {
+    return this.listingService.markAsAdopted(id, token);
   }
 
   @Post('/:id/report')

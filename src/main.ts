@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppDataSource } from '@config/data-source';
@@ -15,8 +16,10 @@ async function bootstrap() {
   const allowedOrigins = [
     'https://udomi-me.com',
     'https://udomi-me.com/',
-    'http://localhost:3000/',
     'http://localhost:3000',
+    'http://localhost:3000/',
+    'http://localhost:5173',
+    'http://localhost:5173/',
     'https://accounts.google.com',
     'https://accounts.google.com/',
   ];

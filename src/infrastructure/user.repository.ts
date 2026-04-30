@@ -8,42 +8,36 @@ export class UserRepository {
 
   async findById(id: string, relations?: string[]): Promise<User | null> {
     try {
-      return this.userRepository.findOne({
-        where: { id },
-        relations: relations,
-      });
+      return this.userRepository.findOne({ where: { id }, relations });
     } catch (e) {
       console.error(e);
-      throw new HttpException(
-        'Error finding user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Error finding user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async findByEmail(email: string): Promise<User | null> {
     try {
-      return this.userRepository.findOne({
-        where: { email },
-      });
+      return this.userRepository.findOne({ where: { email } });
     } catch (e) {
       console.error(e);
-      throw new HttpException(
-        'Error finding user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Error finding user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async save(user: User): Promise<User> {
+  async findByVerificationToken(token: string): Promise<User | null> {
     try {
-      return this.userRepository.save(user);
+      return this.userRepository.findOne({ where: { verification_token: token } });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async save(user: Partial<User>): Promise<User> {
+    try {
+      return this.userRepository.save(user as User);
     } catch (e) {
       console.error(e);
-      throw new HttpException(
-        'Error saving user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Error saving user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -52,10 +46,7 @@ export class UserRepository {
       await this.userRepository.remove(user);
     } catch (e) {
       console.error(e);
-      throw new HttpException(
-        'Error removing user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Error removing user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
