@@ -2,7 +2,6 @@ import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { User } from '@domain/user/User.entity';
 import { Listing } from '@domain/listing/Listing.entity';
-import { ImageResource } from '@domain/resource/ImageResource.entity';
 import { PasswordResetToken } from '@domain/auth/PasswordResetToken.entity';
 
 export const AppDataSource = new DataSource({
@@ -14,5 +13,5 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'postgres',
   synchronize: true,
   logging: true,
-  entities: [User, Listing, ImageResource, PasswordResetToken],
+  entities: [User, Listing, PasswordResetToken],
 });

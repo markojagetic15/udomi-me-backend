@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 
 const { PORT = 8080 } = process.env;
+const { FRONTEND_URL = 'http://localhost:3000' } = process.env;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,16 +14,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix('/api');
 
-  const allowedOrigins = [
-    'https://udomi-me.com',
-    'https://udomi-me.com/',
-    'http://localhost:3000',
-    'http://localhost:3000/',
-    'http://localhost:5173',
-    'http://localhost:5173/',
-    'https://accounts.google.com',
-    'https://accounts.google.com/',
-  ];
+  const allowedOrigins = [FRONTEND_URL];
 
   app.enableCors({
     origin: allowedOrigins,
