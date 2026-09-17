@@ -1,85 +1,183 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Udomi Me - Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+REST API for **Udomi Me**, a pet adoption platform. Users can list pets for adoption, browse and filter listings, favorite them, show interest, and mark them as adopted.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Built with [NestJS](https://nestjs.com/) 10, TypeORM, and PostgreSQL.
 
-## Description
+## Tech Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Concern           | Technology                                          |
+| ------------------ | ---------------------------------------------------- |
+| Language           | TypeScript 5.1                                      |
+| Framework          | NestJS 10 (Express platform)                        |
+| Database           | PostgreSQL 16                                       |
+| ORM                | TypeORM 0.3 (`synchronize: true`, no migrations)    |
+| Auth               | JWT (1-day token, 7-day HTTP-only cookie) + Passport |
+| OAuth              | Google (`passport-google-oauth20`)                  |
+| Email              | MailerSend (verification + password reset)          |
+| Password hashing   | bcrypt (12 salt rounds)                             |
+| Validation         | class-validator / class-transformer                 |
+| Deployment         | Heroku (`Procfile`)                                 |
 
-## Project setup
+## Getting Started
 
-```bash
-$ pnpm install
-```
+### Prerequisites
 
-## Compile and run the project
+- Node.js 20+
+- npm
+- Docker (for local PostgreSQL)
+
+### Setup
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+npm install
 ```
 
-## Run tests
+Create a `.env` file in the project root:
 
 ```bash
-# unit tests
-$ pnpm run test
+# Database
+DB_HOST=localhost
+DB_PORT=5433
+DB_USER=udomi
+DB_PASSWORD=udomi_password
+DB_NAME=udomi_me
 
-# e2e tests
-$ pnpm run test:e2e
+# Auth
+JWT_SECRET=
 
-# test coverage
-$ pnpm run test:cov
+# Google OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Email (MailerSend)
+MAILERSEND_API_KEY=
+MAILERSEND_TEMPLATE_ID=
+SUPPORT_EMAIL=
+BUSINESS_NAME=
+
+# Misc
+FRONTEND_URL=http://localhost:3000
+PORT=8080
+NODE_ENV=development
 ```
 
-## Resources
+Start the database:
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+docker-compose up -d
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+This spins up Postgres 16 on `localhost:5433` (user `udomi`, db `udomi_me`).
 
-## Support
+Run the API:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run start:dev
+```
 
-## Stay in touch
+The server listens on `PORT` (default `8080`) with all routes prefixed under `/api`.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+> Schema is created automatically via TypeORM `synchronize: true` - no migrations to run.
 
-## License
+## Scripts
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+| Command               | Description                          |
+| ---------------------- | ------------------------------------- |
+| `npm run start:dev`    | Start with hot reload                |
+| `npm run start:debug`  | Start with hot reload + debugger     |
+| `npm run build`        | Compile to `dist/`                   |
+| `npm run start:prod`   | Run the compiled build               |
+| `npm run lint`         | ESLint with autofix                  |
+| `npm run format`       | Prettier write                       |
+| `npm test`             | Unit tests (Jest)                    |
+| `npm run test:e2e`     | End-to-end tests                     |
+| `npm run test:cov`     | Coverage report                      |
+
+## Project Structure
+
+The codebase follows a lightweight layered architecture:
+
+```
+src/
+├── application/
+│   ├── controllers/     # HTTP layer - routing, request/response shaping
+│   │   ├── auth/
+│   │   ├── listing/
+│   │   └── user/
+│   └── dto/              # Request/response DTOs, validated with class-validator
+├── domain/               # TypeORM entities (User, Listing, PasswordResetToken)
+├── services/             # Business logic, one per domain area
+├── infrastructure/       # Repositories - persistence access
+├── shared/               # Cross-cutting helpers (JWT guard, cookies, bcrypt/JWT utils, pagination)
+├── auth/strategies/      # Passport strategies (Google OAuth)
+├── config/               # TypeORM data source configuration
+├── app.module.ts
+└── main.ts
+```
+
+Path aliases (see `tsconfig.json`): `@application`, `@domain`, `@services`, `@infrastructure`, `@shared`, `@config`.
+
+## API Reference
+
+All routes are prefixed with `/api`. Authenticated routes read the JWT from an HTTP-only `token` cookie set on login/signup.
+
+### Auth
+
+| Method | Path                     | Auth | Description                        |
+| ------ | ------------------------ | ---- | ----------------------------------- |
+| POST   | `/login`                 | -    | Email/password login               |
+| POST   | `/signup`                | -    | Register + send verification email |
+| GET    | `/auth/verify-email`     | -    | Verify email via token (query)     |
+| POST   | `/change-password`       | 🔒   | Change password                    |
+| POST   | `/forgot-password`       | -    | Request password reset email       |
+| POST   | `/reset-password`        | -    | Reset password via token           |
+| POST   | `/logout`                | -    | Clear auth cookie                  |
+| GET    | `/google`                | -    | Start Google OAuth flow            |
+| GET    | `/auth/google/callback`  | -    | Google OAuth callback              |
+
+### Users
+
+| Method | Path                       | Auth | Description                  |
+| ------ | -------------------------- | ---- | ------------------------------ |
+| GET    | `/me`                      | 🔒   | Current user profile         |
+| GET    | `/users/:id`               | -    | Public user profile          |
+| PUT    | `/users/:id`               | 🔒   | Update profile                |
+| DELETE | `/users/:id`               | 🔒   | Delete account                |
+| GET    | `/users/:id/listings`      | -    | Paginated listings for a user |
+| GET    | `/users/:id/favorites`     | -    | User's favorited listings     |
+
+### Listings
+
+| Method | Path                     | Auth | Description                          |
+| ------ | ------------------------ | ---- | -------------------------------------- |
+| POST   | `/listings/`             | 🔒   | Create a listing                     |
+| GET    | `/listings/`             | -    | Browse listings (search/category/order/pagination) |
+| GET    | `/listings/user`         | 🔒   | Current user's listings              |
+| GET    | `/listings/:id`          | -    | Listing detail                       |
+| PUT    | `/listings/:id`          | 🔒   | Update a listing                     |
+| DELETE | `/listings/:id`          | 🔒   | Delete a listing                     |
+| POST   | `/listings/:id/favorite` | 🔒   | Toggle favorite                      |
+| POST   | `/listings/:id/interest` | 🔒   | Show interest                        |
+| POST   | `/listings/:id/adopt`    | 🔒   | Mark as adopted                      |
+| POST   | `/listings/:id/report`   | 🔒   | Report a listing                     |
+
+## Data Model
+
+**User** - `first_name`, `last_name`, `email` (unique), `password` (nullable for Google accounts), `is_verified`, `verification_token`; owns `listings`, `favorite_listings`, `interested_listings`.
+
+**Listing** - `title`, `description`, `images` (JSON array of `{url, id, position}`), `address`, `phone_number`, `email`, `category` (`dog` | `cat` | `rabbit` | `bird` | `reptile` | `horse` | `other`), `gender`, `breed`, `date_of_birth`, `is_vaccinated`, `size`, `lat`/`lng`/`area_code`, `is_urgent`, `is_adopted`, `is_active`, `interested_users`, `number_of_interested_users`.
+
+**PasswordResetToken** - one-time, 1-hour-expiry token tied to a user.
+
+All entities use UUID primary keys and `created_at`/`updated_at` timestamps.
+
+## Auth Notes
+
+- Passwords require 8–20 characters with at least one uppercase letter, one lowercase letter, and a digit or symbol.
+- Tokens are signed with `JWT_SECRET` and expire after 1 day; the cookie itself lives for 7 days (`secure` + `sameSite: strict` in production, `lax` in development).
+- Google OAuth users are auto-registered and pre-verified with no password set.
+
+## Deployment
+
+Deployed to Heroku (`Procfile`: `web: node dist/main.js`). Build with `npm run build`, then run `npm run start:prod`.
