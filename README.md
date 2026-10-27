@@ -49,6 +49,9 @@ JWT_SECRET=
 # Google OAuth
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+# Must match the callback registered in Google Cloud Console. Falls back to
+# http://localhost:<PORT>/api/auth/google/callback if unset.
+GOOGLE_CALLBACK_URL=
 
 # Email (MailerSend)
 MAILERSEND_API_KEY=

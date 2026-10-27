@@ -27,8 +27,12 @@ export class ListingController {
   }
 
   @Put('/:id')
-  updateListing(@Param('id') id: string, @Body() body: UpdateListingDto) {
-    return this.listingService.updateListing(id, body);
+  updateListing(
+    @Param('id') id: string,
+    @Body() body: UpdateListingDto,
+    @Cookies('token') token: string,
+  ) {
+    return this.listingService.updateListing(id, body, token);
   }
 
   @Delete('/:id')

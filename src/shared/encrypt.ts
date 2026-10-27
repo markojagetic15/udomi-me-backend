@@ -15,4 +15,10 @@ export class encrypt {
     if (!secret) throw new Error('JWT_SECRET environment variable is not set');
     return jwt.sign(payload, secret, { expiresIn: '1d' });
   }
+
+  static verifyToken(token: string): jwt.JwtPayload & { id: string } {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is not set');
+    return jwt.verify(token, secret) as jwt.JwtPayload & { id: string };
+  }
 }

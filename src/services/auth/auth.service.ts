@@ -152,12 +152,11 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ) {
-    const jwt = require('jsonwebtoken');
-    let decoded: any;
+    let decoded: { id: string };
     try {
-      decoded = jwt.decode(authToken);
+      decoded = encrypt.verifyToken(authToken);
     } catch {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('Invalid or expired token');
     }
 
     const user = await this.userRepository.findById(decoded?.id);

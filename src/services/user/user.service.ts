@@ -1,14 +1,11 @@
-import * as jwt from 'jsonwebtoken';
-import { JwtPayload } from 'jsonwebtoken';
 import {
   HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
-  UseGuards,
 } from '@nestjs/common';
 import { UpdateUserDto } from '@application/dto/user/update-user.dto';
-import { JwtAuthGuard } from '@shared/auth.guard';
+import { encrypt } from '@shared/encrypt';
 import { UserRepository } from '@infrastructure/user.repository';
 import { Pagination } from '@shared/pagination.helper';
 import { ListingRepository } from '@infrastructure/listing.repository';
@@ -25,13 +22,14 @@ export class UserService {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    const decode = jwt.decode(token);
-
-    if (!decode) {
+    let decode: { id: string };
+    try {
+      decode = encrypt.verifyToken(token);
+    } catch {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    const user = await this.userRepository.findById((decode as JwtPayload).id, [
+    const user = await this.userRepository.findById(decode.id, [
       'favorite_listings',
       'interested_listings',
     ]);
@@ -43,7 +41,6 @@ export class UserService {
     return user;
   }
 
-  @UseGuards(JwtAuthGuard)
   async updateUser(id: string, body: UpdateUserDto, token: string) {
     const me = await this.getMe(token);
 
@@ -63,7 +60,6 @@ export class UserService {
     return user;
   }
 
-  @UseGuards(JwtAuthGuard)
   async deleteUser(id: string, token: string) {
     const me = await this.getMe(token);
 

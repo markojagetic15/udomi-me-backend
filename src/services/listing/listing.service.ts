@@ -57,11 +57,16 @@ export class ListingService {
     return { listing };
   }
 
-  async updateListing(id: string, body: UpdateListingDto) {
-    const listing = await this.listingRepository.findById(id);
+  async updateListing(id: string, body: UpdateListingDto, token: string) {
+    const user = await this.userService.getMe(token);
+    const listing = await this.listingRepository.findById(id, ['user']);
 
     if (!listing) {
       throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.user.id !== user.id) {
+      throw new ForbiddenException('You can only edit your own listings');
     }
 
     await this.listingRepository.update(listing.id, { ...body });
