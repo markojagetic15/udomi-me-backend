@@ -9,7 +9,7 @@ This codebase has no Nest guards or interceptors wired up — follow the existin
 
 ## Steps
 
-1. **DTO** (if the route takes a body): add `src/application/dto/<area>/<name>.dto.ts` with class-validator decorators (`@IsString`, `@IsOptional`, etc.), mirroring the style in `create-listing.dto.ts` / `register.dto.ts`. The global `ValidationPipe` (`main.ts`) enforces it automatically — no per-route wiring needed.
+1. **DTO** (if the route takes a body) — the global ValidationPipe runs with `whitelist: true`, so **any field without a class-validator decorator is silently stripped**: add `src/application/dto/<area>/<name>.dto.ts` with class-validator decorators (`@IsString`, `@IsOptional`, etc.), mirroring the style in `create-listing.dto.ts` / `register.dto.ts`. The global `ValidationPipe` (`main.ts`) enforces it automatically — no per-route wiring needed.
 
 2. **Controller method** in `src/application/controllers/<area>/<area>.controller.ts`:
    - Use `@Get/@Post/@Put/@Delete('/path')`.
@@ -18,11 +18,13 @@ This codebase has no Nest guards or interceptors wired up — follow the existin
    - Keep the controller method a one-line call into the service. No logic here.
 
 3. **Service method** in `src/services/<area>/<area>.service.ts`:
-   - To resolve the caller, call `this.userService.getMe(token)` (inject `UserService` if not already) — this throws 401/404 itself if the token is missing/invalid/user not found.
+   - To resolve the caller, call `this.userService.getMe(token, relations?)` (inject `UserService` if not already) — throws 401 for a missing/invalid token and 403 for a banned user. Pass `[]` as relations when you don't need favorites/interests. Variants: `getMeOptional(token)` (null when logged out), `requireAdmin(token)`, `requireVerified(token)` (posting/messaging).
    - For ownership checks, compare `resource.user.id !== me.id` and throw `ForbiddenException` — follow the pattern in `deleteListing`/`markAsAdopted`.
    - **Do not add new `jwt.decode()`/`jwt.verify()` calls** — always go through `UserService.getMe()` so there's one place that resolves identity from a token.
 
-4. **Repository method** (only if you need a new query shape) in `src/infrastructure/<entity>.repository.ts` — wrap it in the existing try/catch-and-rethrow-as-HttpException style, call `this.<entity>Repository` (the field backed by `AppDataSource.getRepository(Entity)`), not `@InjectRepository`.
+4. **Repository method** (only if you need a new query shape) in `src/infrastructure/<entity>.repository.ts` — wrap the query in `dbCall('what', () => ...)` from `@shared/db-call` (logs + rethrows as 500, and actually awaits), call the `AppDataSource.getRepository(Entity)` field, not `@InjectRepository`. Escape user text in LIKE patterns with `likeEscape`.
+   - Returning other users? Map them through `publicUser()` (`domain/user/public-user.ts`) — never expose email.
+   - Credential-ish or spammable route? Add `@Throttle({ default: { limit, ttl } })`.
 
 5. **Wire it up**: new controllers/services/repositories must be added to `providers`/`controllers` arrays in `src/app.module.ts` — there are no feature modules, everything is flat in the one `AppModule`.
 

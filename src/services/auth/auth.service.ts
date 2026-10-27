@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,70 +16,64 @@ import { UserRepository } from '@infrastructure/user.repository';
 import { ForgotPasswordDto } from '@application/dto/auth/forgot-password.dto';
 import { AuthRepository } from '@infrastructure/auth.repository';
 import { ResetPasswordDto } from '@application/dto/auth/reset-password.dto';
-import { EmailParams, MailerSend, Recipient, Sender } from 'mailersend';
 import { Response } from 'express';
-import { JwtService } from '@nestjs/jwt';
+import { MailService, frontendUrl } from '@shared/mail.service';
+import { emailCopy } from '@services/notification/email-copy';
+import { UserService } from '@services/user/user.service';
+
+const RESET_TTL_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
   constructor(
-    private jwtService: JwtService,
     private readonly userRepository: UserRepository,
     private readonly authRepository: AuthRepository,
+    private readonly userService: UserService,
+    private readonly mail: MailService,
   ) {}
 
   private setAuthCookie(res: Response, token: string) {
-    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      // req.secure (not NODE_ENV) so login still works over plain HTTP before
+      // TLS is set up — browsers drop Secure cookies on http://. Relies on
+      // `trust proxy` in main.ts + nginx's X-Forwarded-Proto.
+      secure: res.req.secure,
+      // 'lax' (not 'strict'): the cookie must survive top-level navigations
+      // from other sites — the Google OAuth redirect and links in emails.
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   }
 
-  private async sendEmail(
-    to: { email: string; name: string },
-    subject: string,
-    html: string,
-  ) {
-    if (!process.env.MAILERSEND_API_KEY) return;
-    try {
-      const mailerSend = new MailerSend({ apiKey: process.env.MAILERSEND_API_KEY });
-      const sentFrom = new Sender(process.env.SUPPORT_EMAIL, process.env.BUSINESS_NAME);
-      const emailParams = new EmailParams()
-        .setFrom(sentFrom)
-        .setTo([new Recipient(to.email, to.name)])
-        .setReplyTo(sentFrom)
-        .setSubject(subject)
-        .setHtml(html);
-      await mailerSend.email.send(emailParams);
-    } catch (e) {
-      console.error('Email send failed:', e?.message);
-    }
+  private lang(user: Pick<User, 'language'>) {
+    return user.language === 'en' ? 'en' : 'hr';
+  }
+
+  private sendVerification(user: User) {
+    return this.mail.send(
+      { email: user.email, name: `${user.first_name} ${user.last_name}` },
+      emailCopy.verify(this.lang(user), {
+        name: user.first_name,
+        token: user.verification_token!,
+      }),
+      this.lang(user),
+    );
   }
 
   async login(body: LoginDto, res: Response) {
-    const { email, password } = body;
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(body.email);
 
-    if (!user) {
-      throw new NotFoundException('No account found with this email address');
-    }
+    // Same message for unknown email and wrong password — don't reveal which
+    // addresses have accounts.
+    const invalid = new UnauthorizedException('INVALID_CREDENTIALS');
+    if (!user) throw invalid;
+    if (!user.password) throw new UnauthorizedException('GOOGLE_ACCOUNT');
+    if (!(await encrypt.comparepassword(user.password, body.password)))
+      throw invalid;
+    if (user.is_banned) throw new ForbiddenException('ACCOUNT_BANNED');
 
-    if (!user.password) {
-      throw new UnauthorizedException(
-        'This account was created with Google. Please sign in with Google.',
-      );
-    }
-
-    const isPasswordValid = await encrypt.comparepassword(user.password, password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Incorrect password. Please try again.');
-    }
-
-    const token = encrypt.generateToken({ id: user.id });
-    this.setAuthCookie(res, token);
+    this.setAuthCookie(res, encrypt.generateToken({ id: user.id }));
     return user;
   }
 
@@ -86,60 +82,47 @@ export class AuthService {
 
     const existingUser = await this.userRepository.findByEmail(email);
     if (existingUser) {
-      if (!existingUser.password) {
-        throw new HttpException(
-          'This email is already registered with Google. Please sign in with Google.',
-          HttpStatus.CONFLICT,
-        );
-      }
-      throw new HttpException(
-        'An account with this email already exists.',
-        HttpStatus.CONFLICT,
+      throw new ConflictException(
+        existingUser.password ? 'EMAIL_TAKEN' : 'GOOGLE_ACCOUNT',
       );
     }
 
-    const encryptedPassword = await encrypt.encryptpass(password);
-    const verificationToken = uuidv4();
-
     const user = new User();
     user.id = uuidv4();
-    user.first_name = first_name;
-    user.last_name = last_name;
-    user.email = email;
-    user.password = encryptedPassword;
+    user.first_name = first_name.trim();
+    user.last_name = last_name.trim();
+    user.email = email.trim().toLowerCase();
+    user.password = await encrypt.encryptpass(password);
     user.is_verified = false;
-    user.verification_token = verificationToken;
+    user.verification_token = uuidv4();
+    user.language = body.language ?? 'hr';
 
     await this.userRepository.save(user);
+    await this.sendVerification(user);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    await this.sendEmail(
-      { email, name: `${first_name} ${last_name}` },
-      'Verify your Udomi Me account',
-      `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto">
-          <h2>Welcome to Udomi Me, ${first_name}!</h2>
-          <p>Click the button below to verify your email address.</p>
-          <a href="${frontendUrl}/verify-email?token=${verificationToken}"
-            style="display:inline-block;padding:12px 24px;background:#8EAF9D;color:white;text-decoration:none;border-radius:8px;font-weight:600">
-            Verify Email
-          </a>
-          <p style="color:#888;font-size:12px;margin-top:24px">
-            If you didn't create this account, you can ignore this email.
-          </p>
-        </div>
-      `,
-    );
-
-    const token = encrypt.generateToken({ id: user.id });
-    this.setAuthCookie(res, token);
+    this.setAuthCookie(res, encrypt.generateToken({ id: user.id }));
     return user;
+  }
+
+  async resendVerification(token: string) {
+    const me = await this.userService.getMe(token, []);
+    if (me.is_verified) return { message: 'Already verified' };
+    if (!this.mail.isConfigured()) {
+      throw new HttpException(
+        'EMAIL_NOT_CONFIGURED',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+    me.verification_token = uuidv4();
+    await this.userRepository.save(me);
+    await this.sendVerification(me);
+    return { message: 'Verification email sent' };
   }
 
   async verifyEmail(token: string) {
     const user = await this.userRepository.findByVerificationToken(token);
     if (!user) {
-      throw new HttpException('Invalid or expired verification link.', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('INVALID_VERIFICATION_LINK');
     }
     user.is_verified = true;
     user.verification_token = null;
@@ -152,26 +135,13 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ) {
-    let decoded: { id: string };
-    try {
-      decoded = encrypt.verifyToken(authToken);
-    } catch {
-      throw new UnauthorizedException('Invalid or expired token');
-    }
-
-    const user = await this.userRepository.findById(decoded?.id);
-    if (!user) throw new NotFoundException('User not found');
+    const user = await this.userService.getMe(authToken, []);
 
     if (!user.password) {
-      throw new HttpException(
-        'Google accounts cannot change password here.',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('GOOGLE_ACCOUNT');
     }
-
-    const isValid = await encrypt.comparepassword(user.password, currentPassword);
-    if (!isValid) {
-      throw new UnauthorizedException('Current password is incorrect.');
+    if (!(await encrypt.comparepassword(user.password, currentPassword))) {
+      throw new UnauthorizedException('WRONG_PASSWORD');
     }
 
     user.password = await encrypt.encryptpass(newPassword);
@@ -180,116 +150,87 @@ export class AuthService {
   }
 
   async forgotPassword(body: ForgotPasswordDto) {
-    const { email } = body;
-    const user = await this.userRepository.findByEmail(email);
+    const generic = {
+      message: 'If that email exists, a reset link has been sent.',
+    };
+    const user = await this.userRepository.findByEmail(body.email);
+    // Google-only accounts get the same generic answer (no account enumeration).
+    if (!user || !user.password || user.is_banned) return generic;
 
-    if (!user) {
-      return { message: 'If that email exists, a reset link has been sent.' };
-    }
-
-    if (!user.password) {
-      throw new HttpException(
-        'This account uses Google sign-in. Password reset is not available.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const token = { token: uuidv4(), userId: user.id, expiration: new Date(Date.now() + 3600000) };
+    const token = {
+      token: uuidv4(),
+      userId: user.id,
+      expiration: new Date(Date.now() + RESET_TTL_MS),
+    };
     await this.authRepository.save(token);
-
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-
-    if (process.env.MAILERSEND_API_KEY && process.env.MAILERSEND_TEMPLATE_ID) {
-      try {
-        const mailerSend = new MailerSend({ apiKey: process.env.MAILERSEND_API_KEY });
-        const sentFrom = new Sender(process.env.SUPPORT_EMAIL, process.env.BUSINESS_NAME);
-        const emailParams = new EmailParams()
-          .setFrom(sentFrom)
-          .setTo([new Recipient(user.email, `${user.first_name} ${user.last_name}`)])
-          .setReplyTo(sentFrom)
-          .setSubject('Reset your password')
-          .setTemplateId(process.env.MAILERSEND_TEMPLATE_ID)
-          .setPersonalization([{
-            email: user.email,
-            data: {
-              name: `${user.first_name} ${user.last_name}`,
-              account_name: process.env.BUSINESS_NAME,
-              support_email: process.env.SUPPORT_EMAIL,
-              token: token.token,
-            },
-          }]);
-        await mailerSend.email.send(emailParams);
-      } catch (e) {
-        console.error('Password reset email failed:', e?.message);
-      }
-    } else {
-      await this.sendEmail(
-        { email: user.email, name: `${user.first_name} ${user.last_name}` },
-        'Reset your Udomi Me password',
-        `
-          <div style="font-family:sans-serif;max-width:480px;margin:auto">
-            <h2>Reset your password</h2>
-            <p>Click the button below to reset your password. This link expires in 1 hour.</p>
-            <a href="${frontendUrl}/reset-password?token=${token.token}"
-              style="display:inline-block;padding:12px 24px;background:#8EAF9D;color:white;text-decoration:none;border-radius:8px;font-weight:600">
-              Reset Password
-            </a>
-          </div>
-        `,
-      );
-    }
-
-    return { message: 'If that email exists, a reset link has been sent.' };
+    await this.mail.send(
+      { email: user.email, name: `${user.first_name} ${user.last_name}` },
+      emailCopy.reset(this.lang(user), { token: token.token }),
+      this.lang(user),
+    );
+    return generic;
   }
 
   async resetPassword(body: ResetPasswordDto) {
-    const { token, password } = body;
-    const tokenData = await this.authRepository.findByToken(token);
-
-    if (!tokenData) throw new HttpException('Invalid or expired reset link.', HttpStatus.BAD_REQUEST);
-    if (tokenData.expiration < new Date()) throw new HttpException('Reset link has expired.', HttpStatus.BAD_REQUEST);
+    const tokenData = await this.authRepository.findByToken(body.token);
+    if (!tokenData || tokenData.expiration < new Date()) {
+      throw new BadRequestException('INVALID_RESET_LINK');
+    }
 
     const user = await this.userRepository.findById(tokenData.userId);
-    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    if (!user) throw new BadRequestException('INVALID_RESET_LINK');
 
-    user.password = await encrypt.encryptpass(password);
+    user.password = await encrypt.encryptpass(body.password);
+    // Resetting via email proves ownership of the address.
+    user.is_verified = true;
     await this.userRepository.save(user);
+    await this.authRepository.deleteForUser(user.id);
     return { message: 'Password reset successfully' };
   }
 
   async logout(res: Response) {
-    res.clearCookie('token');
+    res.clearCookie('token', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: res.req.secure,
+    });
     return { message: 'Logged out' };
   }
 
   async googleLoginAndRegister(
-    profile: { email: string; firstName: string; lastName: string; picture?: string },
+    profile: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      picture?: string;
+    },
     res: Response,
   ) {
     let user = await this.userRepository.findByEmail(profile.email);
 
-    if (!user) {
-      user = await this.userRepository.save({
-        email: profile.email,
-        first_name: profile.firstName,
-        last_name: profile.lastName,
-        created_at: new Date(),
-        updated_at: new Date(),
-        id: uuidv4(),
-        password: '',
-        is_verified: true,
-        verification_token: null,
-        listings: [],
-        favorite_listings: [],
-        interested_listings: [],
-      });
+    if (user?.is_banned) {
+      return res.redirect(`${frontendUrl()}/login?error=banned`);
     }
 
-    const token = encrypt.generateToken({ id: user.id });
-    this.setAuthCookie(res, token);
+    if (!user) {
+      const created = new User();
+      created.id = uuidv4();
+      created.email = profile.email.toLowerCase();
+      created.first_name = profile.firstName || profile.email.split('@')[0];
+      created.last_name = profile.lastName || '';
+      created.password = '';
+      created.is_verified = true;
+      created.verification_token = null;
+      user = await this.userRepository.save(created);
+    } else if (!user.is_verified) {
+      // Google has verified the address.
+      user.is_verified = true;
+      user.verification_token = null;
+      await this.userRepository.save(user);
+    }
 
-    res.redirect(
-      `${process.env.FRONTEND_URL || 'http://localhost:3000'}/google-callback?token=${token}&user=${encodeURIComponent(JSON.stringify(user))}`,
-    );
+    this.setAuthCookie(res, encrypt.generateToken({ id: user.id }));
+    // The cookie carries the session; nothing sensitive goes in the URL.
+    res.redirect(`${frontendUrl()}/google-callback`);
   }
 }

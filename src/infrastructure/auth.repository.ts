@@ -1,27 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { AppDataSource } from '@config/data-source';
 import { PasswordResetToken } from '@domain/auth/PasswordResetToken.entity';
+import { dbCall } from '@shared/db-call';
 
 @Injectable()
 export class AuthRepository {
   private readonly authRepository =
     AppDataSource.getRepository(PasswordResetToken);
 
-  async save(token: PasswordResetToken): Promise<PasswordResetToken> {
-    try {
-      return this.authRepository.save(token);
-    } catch (e) {
-      console.error(e);
-      throw new Error('Error saving token');
-    }
+  save(token: PasswordResetToken): Promise<PasswordResetToken> {
+    return dbCall('saving token', () => this.authRepository.save(token));
   }
 
-  async findByToken(token: string): Promise<PasswordResetToken | null> {
-    try {
-      return this.authRepository.findOne({ where: { token } });
-    } catch (e) {
-      console.error(e);
-      throw new Error('Error finding token');
-    }
+  findByToken(token: string): Promise<PasswordResetToken | null> {
+    return dbCall('finding token', () =>
+      this.authRepository.findOne({ where: { token } }),
+    );
+  }
+
+  // Reset links are single-use: drop every outstanding token for the user.
+  async deleteForUser(userId: string): Promise<void> {
+    await dbCall('deleting tokens', () =>
+      this.authRepository.delete({ userId }),
+    );
   }
 }

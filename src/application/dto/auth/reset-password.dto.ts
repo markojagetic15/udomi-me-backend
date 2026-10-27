@@ -1,14 +1,14 @@
 import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { PASSWORD_RULE } from './register.dto';
 
 export class ResetPasswordDto {
   @IsNotEmpty()
+  @IsString()
   token: string;
 
   @IsNotEmpty()
   @IsString()
-  @Length(8, 20)
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'password too weak',
-  })
+  @Length(8, 72)
+  @Matches(PASSWORD_RULE, { message: 'password too weak' })
   password: string;
 }

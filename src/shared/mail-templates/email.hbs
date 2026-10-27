@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="{{lang}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{subject}}</title>
+  </head>
+  <body style="margin:0;background:#f4f7f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2a24">
+    <div style="max-width:520px;margin:0 auto;padding:32px 16px">
+      <p style="font-size:20px;font-weight:800;color:#3f6b55;margin:0 0 20px">🐾 Udomi <span style="color:#e07a5f">me</span></p>
+      <div style="background:#ffffff;border-radius:16px;padding:28px;border:1px solid #e3ebe6">
+        <h1 style="font-size:20px;margin:0 0 16px">{{heading}}</h1>
+        {{#each paragraphs}}
+          {{! Paragraphs are pre-escaped HTML built in email-copy.ts. }}
+          <p style="font-size:15px;line-height:1.6;margin:0 0 12px">{{{this}}}</p>
+        {{/each}}
+        {{#if cta}}
+          <p style="margin:28px 0">
+            <a href="{{cta.url}}" style="display:inline-block;padding:12px 24px;background:#3f6b55;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600">{{cta.label}}</a>
+          </p>
+          <p style="font-size:12px;color:#7b8a82;margin:0;word-break:break-all">{{cta.url}}</p>
+        {{/if}}
+      </div>
+      {{#if footnote}}
+        <p style="font-size:12px;color:#7b8a82;margin:16px 4px 0">{{footnote}}</p>
+      {{/if}}
+    </div>
+  </body>
+</html>

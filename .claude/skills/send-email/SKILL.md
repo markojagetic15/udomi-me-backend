@@ -5,34 +5,10 @@ description: Add or modify a transactional email sent from the Udomi Me backend 
 
 # Send a Transactional Email
 
-All email code currently lives inline in `src/services/auth/auth.service.ts` — there is no dedicated email/mail module. Two patterns exist; pick based on whether the email needs rich/managed templating:
+All sending goes through `MailService` (`src/shared/mail.service.ts`), built on `@nestjs-modules/mailer` (SMTP via nodemailer, configured in `shared/mail.config.ts`). It renders the one branded handlebars layout `shared/mail-templates/email.hbs` plus a plain-text part, is a no-op until `SMTP_HOST`, `MAIL_FROM`, `SMTP_USER` and `SMTP_PASS` are set, and never throws. To test locally without a provider, run Mailpit (`axllent/mailpit`) on the Docker network and point `SMTP_HOST` at it (port 1025, `SMTP_NO_AUTH=true`).
 
-## Pattern A — inline HTML (used for verification email, and as the reset-password fallback)
-
-```ts
-await this.sendEmail(
-  { email: user.email, name: `${user.first_name} ${user.last_name}` },
-  'Subject line',
-  `<div style="font-family:sans-serif;max-width:480px;margin:auto">...</div>`,
-);
-```
-
-`sendEmail()` is a private method on `AuthService` — if you need it from another service, either move it to a shared helper or duplicate the MailerSend boilerplate (there's no existing shared email module to import from). It silently no-ops if `MAILERSEND_API_KEY` is unset, and catches/logs (never throws) on send failure — callers never need to handle an email-send error.
-
-## Pattern B — MailerSend template (used for password reset when `MAILERSEND_TEMPLATE_ID` is set)
-
-```ts
-const emailParams = new EmailParams()
-  .setFrom(sentFrom)
-  .setTo([new Recipient(user.email, name)])
-  .setTemplateId(process.env.MAILERSEND_TEMPLATE_ID)
-  .setPersonalization([{ email: user.email, data: { name, account_name, support_email, token } }]);
-await mailerSend.email.send(emailParams);
-```
-
-The actual email body/design lives in the MailerSend dashboard, not in this repo — `data` keys must match the template's merge-field names exactly (currently `name`, `account_name`, `support_email`, `token`).
-
-## Either way
-
-- Links back to the frontend use `process.env.FRONTEND_URL || 'http://localhost:3000'`, pointing at a frontend route (e.g. `/verify-email?token=...`) — the frontend must have a matching route that reads `?token=` and calls the corresponding backend endpoint.
-- New env vars for a new template (e.g. a new `MAILERSEND_*_TEMPLATE_ID`) must be documented in `CLAUDE.md`'s required `.env` list and in the root docker-compose/deployment env if this ships to production.
+1. Add the copy to `src/services/notification/email-copy.ts` — a function `(lang: 'hr' | 'en', data) => EmailContent` with **both languages**. Escape every user-provided value with `escapeHtml` (paragraphs are raw HTML). Links use `frontendUrl()` and must point at a real frontend route.
+2. Send it:
+   - **User-facing event that should also appear in the bell** → `notificationService.notify(user, '<type>', data)` (add the type to `NotificationType` in `domain/notification/Notification.entity.ts`, the copy key must equal the type, and render it in the frontend's `notificationView.tsx`). It respects `user.email_notifications` and `user.language`.
+   - **Account email (no in-app notification)** → `mail.send({ email, name }, emailCopy.x(lang, data), lang)`, like verification/reset in `AuthService`.
+3. Don't send per-message spam: see `MessagingService.post` for the "only if the recipient has nothing unread yet" pattern.

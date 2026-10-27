@@ -9,6 +9,9 @@ import {
 import { User } from '../user/User.entity';
 import { Category } from '@domain/listing/Category.enum';
 
+export const LISTING_TYPES = ['adoption', 'lost', 'found'] as const;
+export type ListingType = (typeof LISTING_TYPES)[number];
+
 @Entity({ name: 'listings' })
 export class Listing {
   @PrimaryColumn()
@@ -42,7 +45,7 @@ export class Listing {
   breed: string;
 
   @Column({ nullable: true })
-  gender: 'male' | 'female';
+  gender: 'male' | 'female' | 'unknown';
 
   @Column({ nullable: true, enum: Category })
   category: Category;
@@ -82,4 +85,48 @@ export class Listing {
 
   @Column({ nullable: true })
   area_code: string;
+
+  // 'adoption' = rehoming; 'lost' / 'found' = lost & found board. For lost/found,
+  // is_adopted means "reunited" and event_date is when it was lost/found.
+  @Column({ type: 'varchar', default: 'adoption' })
+  listing_type: ListingType;
+
+  @Column({ nullable: true, type: 'timestamptz' })
+  event_date: Date | null;
+
+  @Column({ nullable: true, type: 'text' })
+  city: string | null;
+
+  @Column({ nullable: true })
+  is_sterilized: boolean;
+
+  @Column({ nullable: true })
+  is_microchipped: boolean;
+
+  @Column({ nullable: true })
+  good_with_kids: boolean;
+
+  @Column({ nullable: true })
+  good_with_dogs: boolean;
+
+  @Column({ nullable: true })
+  good_with_cats: boolean;
+
+  @Column({ nullable: true, type: 'text' })
+  medical_notes: string | null;
+
+  // null = not stated, 0 = free.
+  @Column({ nullable: true, type: 'float' })
+  adoption_fee: number | null;
+
+  @Column({ nullable: true, type: 'timestamptz' })
+  adopted_at: Date | null;
+
+  // Optional owner-written story shown on the success stories page.
+  @Column({ nullable: true, type: 'text' })
+  adoption_story: string | null;
+
+  // Set by an admin (moderation) — distinct from is_active, which the owner controls.
+  @Column({ default: false })
+  is_hidden: boolean;
 }
