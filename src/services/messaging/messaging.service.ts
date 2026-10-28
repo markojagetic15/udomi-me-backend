@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Conversation } from '@domain/messaging/Conversation.entity';
 import { Message } from '@domain/messaging/Message.entity';
 import { User } from '@domain/user/User.entity';
-import { displayName, publicUser } from '@domain/user/public-user';
+import { publicUser } from '@domain/user/public-user';
 import { MessagingRepository } from '@infrastructure/messaging.repository';
 import { ListingRepository } from '@infrastructure/listing.repository';
 import { Pagination } from '@shared/pagination.helper';
@@ -161,8 +161,7 @@ export class MessagingService {
 
   // Admin -> user message "from the Udomi me team": reuses this admin's
   // support thread with the user, or starts one (no listing attached).
-  // `email: false` for broadcasts (in-app only; avoids the provider's daily cap).
-  async sendAsTeam(admin: User, recipient: User, body: string, email: boolean) {
+  async sendAsTeam(admin: User, recipient: User, body: string) {
     let c = await this.messagingRepository.findSupport(admin.id, recipient.id);
     if (!c) {
       c = new Conversation();
@@ -174,11 +173,13 @@ export class MessagingService {
       c.last_message_at = new Date();
       c = await this.messagingRepository.saveConversation(c);
     }
-    await this.post(c, admin, body, email);
+    await this.post(c, admin, body);
     return c;
   }
 
-  private async post(c: Conversation, me: User, rawBody: string, email = true) {
+  // No notification or email: the recipient sees the unread badge on the
+  // messages icon (driven by the conversation's last_read_at).
+  private async post(c: Conversation, me: User, rawBody: string) {
     const body = rawBody.trim();
     if (!body) throw new BadRequestException('Message is empty');
 
@@ -186,17 +187,6 @@ export class MessagingService {
     const recipient = isOwner ? c.participant : c.owner;
     if (recipient.is_banned)
       throw new ForbiddenException('This user is no longer available');
-
-    const recipientLastRead = isOwner
-      ? c.participant_last_read_at
-      : c.owner_last_read_at;
-    // Only notify if this is the first message the recipient hasn't seen yet.
-    const alreadyUnread =
-      (await this.messagingRepository.countSince(
-        c.id,
-        me.id,
-        recipientLastRead,
-      )) > 0;
 
     const m = new Message();
     m.id = uuidv4();
@@ -211,21 +201,6 @@ export class MessagingService {
     else c.participant_last_read_at = saved.created_at;
     await this.messagingRepository.saveConversation(c);
 
-    if (!alreadyUnread) {
-      const fromTeam = c.is_support && isOwner;
-      await this.notificationService.notify(
-        recipient,
-        'message',
-        {
-          conversation_id: c.id,
-          listing_id: c.listing?.id ?? null,
-          listing_title: c.listing?.title ?? null,
-          from_name: fromTeam ? 'Udomi me' : displayName(me),
-          preview: preview(body),
-        },
-        email,
-      );
-    }
     return saved;
   }
 }

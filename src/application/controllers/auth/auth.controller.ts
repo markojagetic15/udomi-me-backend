@@ -78,6 +78,12 @@ export class AuthController {
     return this.authService.forgotPassword(body);
   }
 
+  @Get('/reset-password/check')
+  @Throttle({ default: { limit: 30, ttl: 60 * 60_000 } })
+  async checkResetToken(@Query('token') token: string) {
+    return this.authService.checkResetToken(token);
+  }
+
   @Post('/reset-password')
   @Throttle({ default: { limit: 10, ttl: 60 * 60_000 } })
   async resetPassword(@Body() body: ResetPasswordDto) {

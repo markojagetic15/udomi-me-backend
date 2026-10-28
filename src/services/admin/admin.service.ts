@@ -392,7 +392,7 @@ export class AdminService {
   // ---------------- messages from the team ----------------
 
   // Direct message to one user, in their normal inbox ("Udomi me" thread).
-  // Gets the usual notification + email copy (if they allow email).
+  // In-app only: shows up as an unread conversation, no notification/email.
   async messageUser(token: string, userId: string, body: string) {
     const admin = await this.userService.requireAdmin(token);
     if (admin.id === userId)
@@ -400,7 +400,7 @@ export class AdminService {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundException('User not found');
     if (user.is_banned) throw new BadRequestException('This user is banned');
-    const c = await this.messagingService.sendAsTeam(admin, user, body, true);
+    const c = await this.messagingService.sendAsTeam(admin, user, body);
     await this.log(admin, 'message_user', 'user', user.id, user.email);
     return { conversation_id: c.id };
   }
@@ -415,8 +415,6 @@ export class AdminService {
   }
 
   // Same message to many users, each in their own "Udomi me" thread.
-  // In-app only (no email copies): a broadcast would exceed the email
-  // provider's daily limit and isn't something users opted into by email.
   async broadcast(token: string, audience: string, body: string) {
     const admin = await this.userService.requireAdmin(token);
     const users = await this.userRepository.findForBroadcast(
@@ -426,7 +424,7 @@ export class AdminService {
     let sent = 0;
     for (const u of users) {
       try {
-        await this.messagingService.sendAsTeam(admin, u, body, false);
+        await this.messagingService.sendAsTeam(admin, u, body);
         sent++;
       } catch (e) {
         console.error(`Broadcast to ${u.id} failed:`, (e as Error).message);

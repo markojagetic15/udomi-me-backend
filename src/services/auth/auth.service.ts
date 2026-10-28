@@ -171,14 +171,31 @@ export class AuthService {
     return generic;
   }
 
-  async resetPassword(body: ResetPasswordDto) {
-    const tokenData = await this.authRepository.findByToken(body.token);
-    if (!tokenData || tokenData.expiration < new Date()) {
-      throw new BadRequestException('INVALID_RESET_LINK');
+  // Shared by the pre-check (page load) and the actual reset, so both give the
+  // same answer. Used links are deleted on use, so they read as invalid.
+  private async userForResetToken(token: string) {
+    const tokenData = token
+      ? await this.authRepository.findByToken(token)
+      : null;
+    if (!tokenData) throw new BadRequestException('INVALID_RESET_LINK');
+    if (tokenData.expiration < new Date()) {
+      throw new BadRequestException('RESET_LINK_EXPIRED');
     }
-
     const user = await this.userRepository.findById(tokenData.userId);
-    if (!user) throw new BadRequestException('INVALID_RESET_LINK');
+    if (!user || user.is_banned)
+      throw new BadRequestException('INVALID_RESET_LINK');
+    return user;
+  }
+
+  // Lets the reset page validate the link before the user types a password.
+  async checkResetToken(token: string) {
+    const user = await this.userForResetToken(token);
+    const [name, domain] = user.email.split('@');
+    return { valid: true, email: `${name.charAt(0)}•••@${domain}` };
+  }
+
+  async resetPassword(body: ResetPasswordDto) {
+    const user = await this.userForResetToken(body.token);
 
     user.password = await encrypt.encryptpass(body.password);
     // Resetting via email proves ownership of the address.

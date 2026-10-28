@@ -1,6 +1,6 @@
 import { AppDataSource } from '@config/data-source';
 import { Injectable } from '@nestjs/common';
-import { Brackets, MoreThan } from 'typeorm';
+import { Brackets } from 'typeorm';
 import { Conversation } from '@domain/messaging/Conversation.entity';
 import { Message } from '@domain/messaging/Message.entity';
 import { dbCall } from '@shared/db-call';
@@ -113,24 +113,6 @@ export class MessagingRepository {
       qb.orderBy('m.created_at', 'DESC').take(take).getMany(),
     );
     return rows.reverse();
-  }
-
-  // Messages from `senderId` newer than `since` — used to decide whether the
-  // recipient already has an unread one (then skip another email).
-  countSince(
-    conversationId: string,
-    senderId: string,
-    since: Date | null,
-  ): Promise<number> {
-    return dbCall('counting messages', () =>
-      this.messages.count({
-        where: {
-          conversation: { id: conversationId },
-          sender: { id: senderId },
-          ...(since ? { created_at: MoreThan(since) } : {}),
-        },
-      }),
-    );
   }
 
   saveConversation(c: Conversation): Promise<Conversation> {
